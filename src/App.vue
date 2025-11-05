@@ -83,3 +83,9 @@ nav a:first-of-type {
   }
 }
 </style>
+
+<style>
+body {
+  background: #3b7a57
+}
+</style>

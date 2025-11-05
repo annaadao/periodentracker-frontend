@@ -6,7 +6,7 @@ defineProps<{
 
 <template>
   <div class="greetings">
-    <h1 class="pinkfarbe">{{ msg }}</h1>
+    <h1 class="dunkelmagenta">{{ msg }}</h1>
     <h3>
       Dein Zyklus im Überblick!
       <!--a href="https://vite.dev/" target="_blank" rel="noopener">Vite</a-->
@@ -21,7 +21,7 @@ h1 {
   font-size: 4.0rem;
   position: relative;
   top: -10px;
-  color: pink
+  color: #9c225d;
 }
 
 h3 {
