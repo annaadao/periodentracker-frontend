@@ -86,6 +86,6 @@ nav a:first-of-type {
 
 <style>
 body {
-  background: #3b7a57
+  background: #b2d9c4
 }
 </style>
