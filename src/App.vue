@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import HelloWorld pull from './components/HelloWorld.vue'
 </script>
 
 <template>npm
@@ -86,6 +86,6 @@ nav a:first-of-type {
 
 <style>
 body {
-  background: #3b7a57
+  background: #b2d9c4
 }
 </style>
