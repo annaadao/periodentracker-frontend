@@ -3,12 +3,12 @@ import { computed, toRefs } from 'vue'
 
 type Props = {
   year?: number
-  month?: number // 0-11 (JS-Standard). 0=Jan, 9=Okt
+  month?: number // 0-11
+  periodDates?: Set<string> // ISO YYYY-MM-DD der zu markierenden Tage
 }
 const props = defineProps<Props>()
 const { year, month } = toRefs(props)
 
-// Fallback: aktueller Monat
 const base = computed(() => {
   const now = new Date()
   return {
@@ -17,81 +17,115 @@ const base = computed(() => {
   }
 })
 
-// Anzahl Tage
 const daysInMonth = computed(() => new Date(base.value.y, base.value.m + 1, 0).getDate())
-const firstDay = computed(() => new Date(base.value.y, base.value.m, 1).getDay()) // 0=So, 1=Mo
-
+const firstDay = computed(() => new Date(base.value.y, base.value.m, 1).getDay()) // 0=So
 const offset = computed(() => (firstDay.value + 6) % 7)
 
-// Array mit Platzhalter (und echte Tage)
 const cells = computed(() => {
   const blanks = Array.from({ length: offset.value }, () => null as number | null)
   const days = Array.from({ length: daysInMonth.value }, (_, i) => i + 1)
   return [...blanks, ...days]
 })
 
-// Auswahl nach oben melden jojo
-const emit = defineEmits<{ (e: 'select', payload: { day: number, year: number, month: number }): void }>()
+const emit = defineEmits<{
+  (e: 'select', payload: { day: number, year: number, month: number }): void
+}>()
+
 function selectDay(d: number | null) {
   if (d === null) return
   emit('select', { day: d, year: base.value.y, month: base.value.m })
 }
 
-// Anzeigenamen
 const monthLabel = computed(() =>
   new Date(base.value.y, base.value.m, 1).toLocaleString('de-DE', { month: 'long', year: 'numeric' })
 )
 const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+function toISO(y: number, m0: number, d: number) {
+  const mm = String(m0 + 1).padStart(2, '0')
+  const dd = String(d).padStart(2, '0')
+  return `${y}-${mm}-${dd}`
+}
+
+function isPeriod(d?: number | null) {
+  if (!d) return false
+  return props.periodDates?.has(toISO(base.value.y, base.value.m, d)) ?? false
+}
 </script>
 
-
 <template>
-  <div class = "kalendar">
+  <div class="kalendar">
     <div class="toolbar">
       <h3>{{ monthLabel }}</h3>
-      <!-- später ein Next Button einfügen -->
+      <!-- optional: Prev/Nächster Monat Buttons -->
     </div>
 
     <div class="grid header">
-      <div v-for="w in weekdays" :key="w" class ="wk">{{ w }}</div>
+      <div v-for="w in weekdays" :key="w" class="wk">{{ w }}</div>
     </div>
 
     <div class="grid">
       <button
-        v-for = "(cell, i) in cells"
-        :key = "i"
-        class = "cell"
-        :class="{ blank: cell === null }"
-        type = "button"
-        @click = "selectDay(cell)"
+        v-for="(cell, i) in cells"
+        :key="i"
+        class="cell"
+        :class="{ blank: cell === null, 'has-period': isPeriod(cell as number) }"
+        type="button"
+        @click="selectDay(cell)"
         :disabled="cell === null"
       >
         <span v-if="cell">{{ cell }}</span>
+        <span v-if="isPeriod(cell as number)" class="dot" aria-label="Periode am Tag"></span>
       </button>
     </div>
   </div>
 </template>
 
-
 <style scoped>
-.kalendar { padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 12px; }
-.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: .5rem; }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: .5rem;
-}
+
+.kalendar { padding: .75rem; border: 1px solid var(--color-border); border-radius: 12px; }
+.toolbar { color: #0f5c4c; display:flex; justify-content:space-between; align-items:center; margin-bottom: .5rem; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; }
 .header { margin-bottom: .25rem; }
-.wk { text-align:center; font-weight:600; opacity:.8; }
+.wk { color: #0f5c4c; opacity: 1; font-weight: 700; text-align:center; font-weight:600; opacity:.8; }
 .cell {
-  aspect-ratio: 1 / 1;
-  border: 1px solid var(--color-border);
+  position: relative;
+  aspect-ratio: 1/1;
+  /* fix: kein var(--color-background) mehr */
+  background: #cf7696;       /* sattes Rosa, nicht zu hell */
+  color: #fff;               /* gute Lesbarkeit */
+  border: 1px solid #9e4f67; /* leicht dunkler Rand */
   border-radius: .5rem;
-  background: var(--color-background);
   cursor: pointer;
-  display:flex; align-items:center; justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
 }
-.cell:hover { outline: 2px solid pink; }
-.cell.blank { background: transparent; border-color: transparent; cursor: default; }
+
+.cell:hover { outline: 2px solid #e6a3bb; }
+
+.cell.blank {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+
+/* Markierung für Tage mit Periode */
+.cell.has-period {
+  background: #b3005a;    /* dunkleres Magenta */
+  border-color: #7a003c;
+}
+
+.dot {
+  position: absolute;
+  bottom: .25rem;
+  right: .25rem;
+  width: .5rem;
+  height: .5rem;
+  border-radius: 999px;
+  background: #fff;       /* auf dunklem Magenta sichtbar */
+}
+
 </style>
+

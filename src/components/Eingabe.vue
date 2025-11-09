@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { saveEntry, loadEntry, type DayEntry } from '../speichern/periodeSpeichern'
+
 
 const route = useRoute()
+const router = useRouter()
 const dateParam = route.params.date as string // YYYY-MM-DD
 
 const periode = ref(false)
@@ -10,10 +13,31 @@ const symptom = ref('')
 const emotion = ref('')
 const note = ref('')
 
+// Prefill, damit loadEntry auch "genutzt" ist
+onMounted(() => {
+  const existing = loadEntry(dateParam)
+  if (existing) {
+    periode.value = !!existing.periode
+    symptom.value = existing.symptom ?? ''
+    emotion.value = existing.emotion ?? ''
+    note.value = existing.note ?? ''
+  }
+})
+
 function save() {
-  //hier für M3: fetch ans Backend
-  console.log('speichern', { date: dateParam, periode: periode.value, symptom: symptom.value, emotion: emotion.value, note: note.value })
-  alert(`Eintrag gespeichert für ${dateParam} (Demo)`)
+  const entry: DayEntry = {
+    date: dateParam,
+    periode: periode.value,
+    symptom: symptom.value,
+    emotion: emotion.value,
+    note: note.value
+  }
+  saveEntry(entry) // jetzt wird's wirklich benutzt
+  alert(`Eintrag gespeichert für ${dateParam}`)
+}
+
+function goBack() {
+  router.back() // wenn eine benannte Route: router.push({ name: 'Kalender' })
 }
 </script>
 
@@ -37,6 +61,10 @@ function save() {
         <span>Notizen</span>
         <textarea v-model="note" rows="3" placeholder="weitere Details..."></textarea>
       </label>
+      <div class="actions">
+        <button type="button" @click="goBack">Zurück</button>
+        <button type="submit" class="primary">Speichern</button>
+      </div>
     </form>
 
   </main>

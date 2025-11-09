@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import Kalendar from '@/components/Kalendar.vue'
+import Kalender from '@/components/Kalendar.vue'
 
 const router = useRouter()
 
@@ -17,11 +17,17 @@ function handleSelect(payload: { day: number, year: number, month: number }) {
 
 <template>
   <main>
-    <h2>Kalendar</h2>
-    <Kalendar @select = "handleSelect" />
+    <h2>Kalender</h2>
+    <Kalender @select = "handleSelect" />
   </main>
 </template>
 
 <style scoped>
 main { padding: 1rem; }
+
+.section-title {
+  color: #0f5c4c;
+  margin: 0 0 .75rem;
+  font-weight: 700;
+}
 </style>

@@ -4,15 +4,6 @@ import { ref } from 'vue'
 defineProps<{
   msg: string
 }>()
-
-type Symptom = { id: number; name: string }
-
-const symptoms = ref<Symptom[]>([
-  { id: 1, name: 'Krämpfe' },
-  { id: 2, name: 'Kopfschmerzen' },
-  { id: 3, name: 'Müdigkeit' },
-  { id: 4, name: ' Stimmungsschwankungen'}
-])
 </script>
 
 <template>
@@ -23,16 +14,6 @@ const symptoms = ref<Symptom[]>([
       <!--a href="https://vite.dev/" target="_blank" rel="noopener">Vite</a-->
       <!--a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a-->
     </h3>
-
-    <!-- Symptomliste -->
-    <section class = "card">
-      <h4> Häufige Symptome </h4>
-      <ul>
-        <li v-for = "s in symptoms" :key = "s.id">
-          {{s.name}}
-        </li>
-      </ul>
-    </section>
   </div>
 </template>
 
