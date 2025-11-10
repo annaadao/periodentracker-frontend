@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <div class="greetings">
-    <h1 class="dunkelmagenta">{{ msg }}</h1>
+    <h1 class="periodentrackerTitel">{{ msg }}</h1>
     <h3>
       Dein Zyklus im Überblick!
       <!--a href="https://vite.dev/" target="_blank" rel="noopener">Vite</a-->
@@ -19,7 +19,7 @@ defineProps<{
 
 <style scoped>
 h1 {
-  font-weight: 250;
+  font-weight: 500;
   font-size: 4.0rem;
   position: relative;
   top: -10px;
@@ -28,6 +28,7 @@ h1 {
 
 h3 {
   font-size: 1.4rem;
+  color: #9e4f67;
 }
 
 .greetings h1,
@@ -45,7 +46,9 @@ h3 {
 }
 
 @media (min-width: 1024px) {
-  .greetings h1,
+  .greetings h1 {
+    text-align: left;
+  }
   .greetings h3 {
     text-align: left;
   }

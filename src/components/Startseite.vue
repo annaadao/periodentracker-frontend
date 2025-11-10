@@ -16,18 +16,31 @@ function handleSelect(payload: { day: number, year: number, month: number }) {
 
 
 <template>
-  <main>
-    <h2>Kalender</h2>
-    <Kalender @select = "handleSelect" />
+  <main class="page">
+    <h2 class="page-title">Kalender</h2>
+    <div class="calendar-area">
+      <Kalender @select = "handleSelect" />
+    </div>
   </main>
 </template>
 
 <style scoped>
-main { padding: 1rem; }
 
-.section-title {
-  color: #0f5c4c;
-  margin: 0 0 .75rem;
-  font-weight: 700;
+.page {
+  max-width: 1100px;     /* Breite */
+  margin: 0 auto;        /* zentrierte Lage */
+  padding: 0 1rem 3rem;  /* Seitenabstand */
 }
+
+.page-title {
+  margin: 0 0 .75rem 0;
+  font-weight: 900;
+  color: #0f5c4c;
+}
+
+.calendar-area {
+  display: grid;
+  place-items: center;
+}
+
 </style>

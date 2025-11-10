@@ -57,7 +57,7 @@ function isPeriod(d?: number | null) {
   <div class="kalendar">
     <div class="toolbar">
       <h3>{{ monthLabel }}</h3>
-      <!-- optional: Prev/Nächster Monat Buttons -->
+      <!-- Nächster Monat Button einbauen später -->
     </div>
 
     <div class="grid header">
@@ -83,11 +83,11 @@ function isPeriod(d?: number | null) {
 
 <style scoped>
 
-.kalendar { padding: .75rem; border: 1px solid var(--color-border); border-radius: 12px; }
+.kalendar { padding: .75rem; border: 1px solid var(--color-border); border-radius: 12px; width: fit-content; }
 .toolbar { color: #0f5c4c; display:flex; justify-content:space-between; align-items:center; margin-bottom: .5rem; }
 .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; }
 .header { margin-bottom: .25rem; }
-.wk { color: #0f5c4c; opacity: 1; font-weight: 700; text-align:center; font-weight:600; opacity:.8; }
+.wk { color: #0f5c4c; opacity: 1; font-weight: 500; text-align:center; font-weight:600; opacity:.8; } /* wochentage */
 .cell {
   position: relative;
   aspect-ratio: 1/1;
@@ -125,6 +125,10 @@ function isPeriod(d?: number | null) {
   height: .5rem;
   border-radius: 999px;
   background: #fff;       /* auf dunklem Magenta sichtbar */
+}
+
+.toolbar h3 {
+  font-weight: 700;
 }
 
 </style>

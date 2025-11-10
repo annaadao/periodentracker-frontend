@@ -6,13 +6,11 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>npm
   <header>
-
-
     <div class="wrapper">
       <HelloWorld msg="PeriodenTracker" />
 
       <nav>
-        <RouterLink to="/">Menü</RouterLink>
+        <RouterLink to="/">Startseite</RouterLink>
         <RouterLink to="/about">Kalender</RouterLink>
       </nav>
     </div>
@@ -34,17 +32,18 @@ header {
 
 nav {
   width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+  font-size: 1rem;
+  text-align: left;
+  margin-top: .75rem;
+  color: black;
 }
 
 nav a.router-link-exact-active {
-  color: var(--color-text);
+  border-color: #0f5c4c;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: pink;
+nav a.hover {
+  background-color: darkseagreen;
 }
 
 nav a {
