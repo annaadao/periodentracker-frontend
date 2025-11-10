@@ -13,7 +13,6 @@ const symptom = ref('')
 const emotion = ref('')
 const note = ref('')
 
-// Prefill, damit loadEntry auch "genutzt" ist
 onMounted(() => {
   const existing = loadEntry(dateParam)
   if (existing) {
@@ -32,12 +31,12 @@ function save() {
     emotion: emotion.value,
     note: note.value
   }
-  saveEntry(entry) // jetzt wird's wirklich benutzt
+  saveEntry(entry)
   alert(`Eintrag gespeichert für ${dateParam}`)
 }
 
 function goBack() {
-  router.back() // wenn eine benannte Route: router.push({ name: 'Kalender' })
+  router.back()
 }
 </script>
 
@@ -53,13 +52,13 @@ function goBack() {
       </label>
 
       <label class="row">
-        <span>Symptome</span>
-        <input v-model="symptom" placeholder="zB stare Unterleibschmerzen" />
+        <span>Symptome:</span>
+        <input v-model="symptom" placeholder="z.B. starke Unterleibschmerzen" />
       </label>
 
       <label class="row">
-        <span>Notizen</span>
-        <textarea v-model="note" rows="3" placeholder="weitere Details..."></textarea>
+        <span>Deine Notizen:</span>
+        <textarea v-model="note" rows="3" placeholder="Weitere Details..."></textarea>
       </label>
       <div class="actions">
         <button type="button" @click="goBack">Zurück</button>
@@ -72,9 +71,29 @@ function goBack() {
 
 
 <style scoped>
-  .page { padding: 1rem; }
-  .card { display:grid; gap:.75rem; border:1px solid var(--color-border); border-radius:12px; padding:1rem; }
-  .row { display:grid; gap:.5rem; }
-  input, textarea, button { font: inherit; padding: .5rem; }
-  button { cursor: pointer; }
+  .page {
+    padding: 1rem;
+  }
+
+  .card {
+    display:grid;
+    gap:.75rem;
+    border:1px solid var(--color-border);
+    border-radius:12px;
+    padding:1rem;
+  }
+
+  .row {
+    display:grid;
+    gap:.5rem;
+  }
+
+  input, textarea, button {
+    font: inherit;
+    padding: .5rem;
+  }
+
+  button {
+    cursor: pointer;
+  }
 </style>

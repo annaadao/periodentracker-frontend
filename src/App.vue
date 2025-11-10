@@ -9,8 +9,8 @@ import HelloWorld from './components/HelloWorld.vue'
     <div class="wrapper">
       <HelloWorld msg="PeriodenTracker" />
 
-      <nav>
-        <RouterLink to="/">Startseite</RouterLink>
+      <nav class="top-nav">
+        <RouterLink to="/home">Startseite</RouterLink>
         <RouterLink to="/about">Kalender</RouterLink>
       </nav>
     </div>
@@ -25,24 +25,27 @@ header {
   max-height: 100vh;
 }
 
+/* später logo einbauen! */
 .logo {
   display: block;
   margin: 0 auto 2rem;
 }
 
-nav {
-  width: 100%;
-  font-size: 1rem;
-  text-align: left;
+.top-nav {
   margin-top: .75rem;
-  color: #799567;
+  display: flex;
+  gap: .75rem;
 }
 
-nav a.router-link-exact-active {
-  border-color: #799567;
+.top-nav a {
+  text-decoration: none;
+  padding: .35rem .9rem;
+  border-radius: 8px;
+  background: #a7b59e;
+  color: #2d4839;
 }
 
-nav a.hover {
+nav a:hover {
   background-color: #799567;
 }
 

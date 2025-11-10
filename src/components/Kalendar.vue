@@ -2,23 +2,23 @@
 import { computed, toRefs } from 'vue'
 
 type Props = {
-  year?: number
   month?: number // 0-11
-  periodDates?: Set<string> // ISO YYYY-MM-DD der zu markierenden Tage
+  year?: number
+  periodDates?: Set<string> // DD-MM-YYYY der zu markierenden Tage
 }
 const props = defineProps<Props>()
-const { year, month } = toRefs(props)
+const { month, year } = toRefs(props)
 
 const base = computed(() => {
   const now = new Date()
   return {
-    y: year?.value ?? now.getFullYear(),
-    m: month?.value ?? now.getMonth()
+    m: month?.value ?? now.getMonth(),
+    y: year?.value ?? now.getFullYear()
   }
 })
 
-const daysInMonth = computed(() => new Date(base.value.y, base.value.m + 1, 0).getDate())
 const firstDay = computed(() => new Date(base.value.y, base.value.m, 1).getDay()) // 0=So
+const daysInMonth = computed(() => new Date(base.value.y, base.value.m + 1, 0).getDate())
 const offset = computed(() => (firstDay.value + 6) % 7)
 
 const cells = computed(() => {
@@ -28,12 +28,12 @@ const cells = computed(() => {
 })
 
 const emit = defineEmits<{
-  (e: 'select', payload: { day: number, year: number, month: number }): void
+  (e: 'select', payload: { day: number, month: number, year: number }): void
 }>()
 
 function selectDay(d: number | null) {
   if (d === null) return
-  emit('select', { day: d, year: base.value.y, month: base.value.m })
+  emit('select', { day: d, month: base.value.m, year: base.value.y})
 }
 
 const monthLabel = computed(() =>
@@ -41,15 +41,15 @@ const monthLabel = computed(() =>
 )
 const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
-function toISO(y: number, m0: number, d: number) {
-  const mm = String(m0 + 1).padStart(2, '0')
+function toISO(d: number, m0: number,  y: number) {
   const dd = String(d).padStart(2, '0')
-  return `${y}-${mm}-${dd}`
+  const mm = String(m0 + 1).padStart(2, '0')
+  return `${dd}-${mm}-${y}`
 }
 
 function isPeriod(d?: number | null) {
   if (!d) return false
-  return props.periodDates?.has(toISO(base.value.y, base.value.m, d)) ?? false
+  return props.periodDates?.has(toISO(d, base.value.m, base.value.y)) ?? false
 }
 </script>
 
