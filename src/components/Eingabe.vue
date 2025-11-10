@@ -78,22 +78,26 @@ function goBack() {
   .card {
     display:grid;
     gap:.75rem;
-    border:1px solid var(--color-border);
+    border-color: #b3005a;
     border-radius:12px;
     padding:1rem;
+    background-color: #f9ddd8;
   }
 
   .row {
     display:grid;
     gap:.5rem;
+    color: #7a003c;
   }
 
   input, textarea, button {
     font: inherit;
+    border-radius: 10px;
     padding: .5rem;
   }
 
   button {
     cursor: pointer;
+    border-radius: 10px;
   }
 </style>
