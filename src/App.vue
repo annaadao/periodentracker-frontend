@@ -35,15 +35,15 @@ nav {
   font-size: 1rem;
   text-align: left;
   margin-top: .75rem;
-  color: black;
+  color: #799567;
 }
 
 nav a.router-link-exact-active {
-  border-color: #0f5c4c;
+  border-color: #799567;
 }
 
 nav a.hover {
-  background-color: darkseagreen;
+  background-color: #799567;
 }
 
 nav a {
@@ -86,6 +86,7 @@ nav a:first-of-type {
 
 <style>
 body {
-  background: #b2d9c4
+  /* background: #b2d9c4 */
+  background: #a7b59e;
 }
 </style>

@@ -19,16 +19,16 @@ defineProps<{
 
 <style scoped>
 h1 {
-  font-weight: 500;
+  font-weight: 800;
   font-size: 4.0rem;
   position: relative;
   top: -10px;
-  color: #9c225d;
+  color: #80394e;
 }
 
 h3 {
   font-size: 1.4rem;
-  color: #9e4f67;
+  color: #9c5c6b;
 }
 
 .greetings h1,

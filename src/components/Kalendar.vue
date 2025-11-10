@@ -83,18 +83,48 @@ function isPeriod(d?: number | null) {
 
 <style scoped>
 
-.kalendar { padding: .75rem; border: 1px solid var(--color-border); border-radius: 12px; width: fit-content; }
-.toolbar { color: #0f5c4c; display:flex; justify-content:space-between; align-items:center; margin-bottom: .5rem; }
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; }
-.header { margin-bottom: .25rem; }
-.wk { color: #0f5c4c; opacity: 1; font-weight: 500; text-align:center; font-weight:600; opacity:.8; } /* wochentage */
+.kalendar {
+  padding: .75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  width: fit-content;
+  background-color: #f9ddd8;
+}
+
+.toolbar {
+  color: #cb748e;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: .5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .5rem;
+}
+
+.header {
+  margin-bottom: .25rem;
+}
+
+.wk {
+  color: #d698ab;
+  opacity: 1;
+  font-weight: 500;
+  text-align:center;
+  font-weight:600;
+  opacity:.8;
+}
+
+/* wochentage */
 .cell {
   position: relative;
   aspect-ratio: 1/1;
-  /* fix: kein var(--color-background) mehr */
-  background: #cf7696;       /* sattes Rosa, nicht zu hell */
-  color: #fff;               /* gute Lesbarkeit */
-  border: 1px solid #9e4f67; /* leicht dunkler Rand */
+  background: #d698ab;
+  color: #f9ddd8;
+  border: 1px solid #cb748e;
   border-radius: .5rem;
   cursor: pointer;
   display: flex;
