@@ -50,3 +50,16 @@ export function periodDatesForMonth(year: number, month0: number): Set<string> {
   }
   return set;
 }
+
+/* ---- NEU: Löschen & Existenzcheck ---- */
+export function deleteEntry(date: string) {
+  const all = readAll();
+  if (all[date]) {
+    delete all[date];
+    writeAll(all);
+  }
+}
+
+export function hasEntry(date: string): boolean {
+  return !!readAll()[date];
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
-import { saveEntry, loadEntry, type DayEntry } from '../speichern/periodeSpeichern'
+import { saveEntry, loadEntry, deleteEntry, hasEntry, type DayEntry } from '../speichern/periodeSpeichern'
 
 
 const route = useRoute()
@@ -12,9 +12,11 @@ const periode = ref(false)
 const symptom = ref('')
 const emotion = ref('')
 const note = ref('')
+const exists = ref(false)
 
 onMounted(() => {
   const existing = loadEntry(dateParam)
+  exists.value = hasEntry(dateParam)
   if (existing) {
     periode.value = !!existing.periode
     symptom.value = existing.symptom ?? ''
@@ -33,6 +35,17 @@ function save() {
   }
   saveEntry(entry)
   alert(`Eintrag gespeichert für ${dateParam}`)
+}
+
+function remove() {
+  if (!confirm('Eintrag wirklich löschen?')) return
+  deleteEntry(dateParam)
+  periode.value = false
+  symptom.value = ''
+  emotion.value = ''
+  note.value = ''
+  exists.value = false
+  router.back()
 }
 
 function goBack() {
@@ -63,6 +76,7 @@ function goBack() {
       <div class="actions">
         <button type="button" @click="goBack">Zurück</button>
         <button type="submit" class="primary">Speichern</button>
+        <button v-if="exists" type="button" class="danger" @click="remove">Löschen</button>
       </div>
     </form>
 

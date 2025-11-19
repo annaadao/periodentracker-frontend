@@ -4,7 +4,7 @@ import
 import HelloWorld from './components/HelloWorld.vue'
 </script>
 
-<template>npm
+<template>
   <header>
     <div class="wrapper">
       <HelloWorld msg="PeriodenTracker" />
