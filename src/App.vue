@@ -10,8 +10,8 @@ import HelloWorld from './components/HelloWorld.vue'
       <HelloWorld msg="PeriodenTracker" />
 
       <nav class="top-nav">
-        <RouterLink to="/home">Startseite</RouterLink>
-        <RouterLink to="/about">Kalender</RouterLink>
+        <RouterLink to="/startseite">Startseite</RouterLink>
+        <RouterLink to="/kalender">Kalender</RouterLink>
       </nav>
     </div>
   </header>
