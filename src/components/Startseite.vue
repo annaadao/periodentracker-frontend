@@ -88,7 +88,7 @@ onMounted(() => requestEntries())
 .page { max-width:1100px; margin:0 auto; padding:0 1rem 3rem; }
 .page-title { margin:0 0 .75rem 0; font-weight:900; color:#426e55; }
 
-// ab hier gilt für Kalendermuster-Design
+/* ab hier gilt für Kalendermuster-Design */
 .months-grid {
   display:grid;
   grid-template-columns:repeat(4,minmax(180px,1fr));
@@ -135,7 +135,7 @@ onMounted(() => requestEntries())
   color: #d698ab;
 }
 
-// ab hier gilt Einträge-Design
+/* ab hier gilt Einträge-Design */
 .entries-box {
   margin-bottom: 2rem;
   padding: 1rem;
@@ -162,7 +162,7 @@ onMounted(() => requestEntries())
   font-size: .9rem;
   font-weight: 600;
   color: #cb748e;
-  margin-bottom; .25rem;
+  margin-bottom: .25rem;
 }
 
 .entry-symptom {
