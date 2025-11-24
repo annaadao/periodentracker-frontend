@@ -17,8 +17,8 @@ const periodEntry: Ref<PeriodEntry[]> = ref([])
 // Backend aufrufen
 function requestEntries() {
   axios
-    .get<PeriodEntry>('https://periodentracker.onrender.com/')
-    .then((response) => periodEntry.value.push(response.data))
+    .get<PeriodEntry[]>('https://periodentracker.onrender.com/api/v1/entries')
+    .then((response) => (periodEntry.value = response.data))
     .catch((error) => console.log(error))
 }
 
