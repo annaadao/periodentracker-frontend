@@ -14,7 +14,7 @@ type PeriodEntry = {
 const router = useRouter()
 const periodEntry: Ref<PeriodEntry[]> = ref([])
 
-// Backend aufrufen
+// Backend aufrufen M3
 function requestEntries() {
   axios
     .get<PeriodEntry[]>('https://periodentracker.onrender.com/api/v1/entries')
@@ -39,6 +39,42 @@ onMounted(() => requestEntries())
 <template>
   <main class="page">
     <h2 class="page-title">Startseite</h2>
+
+    <!-- M3: Einträge aus dem Backend hier visuell anzeigen lassen -->
+    <section class = "entries-box">
+      <h3 class="entries-title">Deine Einträge</h3>
+
+      <!-- Falls keine Einträge, dann... -->
+      <p v-if="!periodEntry.length">
+        Keine Einträge gefunden. Füge neue hinzu!
+      </p>
+
+      <!-- Liste der Einträge -->
+      <ul v-else class="entries-list">
+        <li v-for="(entry, index) in periodEntry"
+            :key="index"
+            class="entry-item"
+            >
+          <div class="entry-date">
+            {{ new Date (entry.date).toLocaleDateString('de-DE') }}
+            <!--
+            toLocaleDateString Funktion, die das Datum in ein bestimmtes Sprachformat umwandelt
+            de = Deutsch, DE = Deutschland --> dementsprechend kommt TT.MM.JJJJ
+             -->
+          </div>
+
+          <div class="entry-symptom">
+            Symptome: <strong>{{ entry.symptom }}</strong>
+          </div>
+
+          <div class="entry-note" v-if="entry.note">
+            Notizen: {{ entry.note }}
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- M2: Kalendermuster -->
     <div class="months-grid">
       <button v-for="(m,i) in monate" :key="m" class="knopf-monat" @click="openMonat(i)">
         <div class="m-name">{{ m }}</div>
@@ -52,6 +88,7 @@ onMounted(() => requestEntries())
 .page { max-width:1100px; margin:0 auto; padding:0 1rem 3rem; }
 .page-title { margin:0 0 .75rem 0; font-weight:900; color:#426e55; }
 
+// ab hier gilt für Kalendermuster-Design
 .months-grid {
   display:grid;
   grid-template-columns:repeat(4,minmax(180px,1fr));
@@ -96,5 +133,45 @@ onMounted(() => requestEntries())
   opacity:.75;
   font-weight: 300;
   color: #d698ab;
+}
+
+// ab hier gilt Einträge-Design
+.entries-box {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #f3baba;
+}
+
+.entries-title {
+  margin-top: 0;
+  margin-bottom: .75rem;
+  font-weight: 700;
+  color: #cb748e;
+}
+
+.entry-item {
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #f3baba;
+}
+
+.entry-date {
+  font-size: .9rem;
+  font-weight: 600;
+  color: #cb748e;
+  margin-bottom; .25rem;
+}
+
+.entry-symptom {
+  font-size: .95rem;
+  margin-bottom: .25rem;
+}
+
+.entry-note {
+  font-size: .9rem;
+  opacity: .8;
 }
 </style>
