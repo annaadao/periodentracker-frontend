@@ -1,6 +1,26 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { onMounted, ref, type Ref} from 'vue'
+import axios from 'axios'
+
+defineProps<{ title: string }>()
+
+type PeriodEntry = {
+  date: string;
+  symptom: string;
+  note: string
+}
+
 const router = useRouter()
+const periodEntry: Ref<PeriodEntry[]> = ref([])
+
+// Backend aufrufen
+function requestEntries() {
+  axios
+    .get<PeriodEntry>('https://periodentracker.onrender.com/')
+    .then((response) => periodEntry.value.push(response.data))
+    .catch((error) => console.log(error))
+}
 
 // hier werden alle Monate in Kalenderform angezeigt
 const monate = [
@@ -12,6 +32,8 @@ const jahr = new Date().getFullYear()
 function openMonat(index: number) {
   router.push({ name: 'kalender', query: { year: jahr, month: index } })
 }
+
+onMounted(() => requestEntries())
 </script>
 
 <template>
