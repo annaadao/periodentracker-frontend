@@ -46,7 +46,7 @@ onMounted(() => requestEntries())
 
       <!-- Falls keine Einträge, dann... -->
       <p v-if="!periodEntry.length">
-        Keine Einträge gefunden. Füge neue hinzu!
+        Keine Einträge da - Füge welche hinzu! ^^
       </p>
 
       <!-- Liste der Einträge -->
@@ -59,8 +59,7 @@ onMounted(() => requestEntries())
             {{ new Date (entry.date).toLocaleDateString('de-DE') }}
             <!--
             toLocaleDateString Funktion, die das Datum in ein bestimmtes Sprachformat umwandelt
-            de = Deutsch, DE = Deutschland --> dementsprechend kommt TT.MM.JJJJ
-             -->
+            de = Deutsch, DE = Deutschland dementsprechend kommt TT.MM.JJJJ -->
           </div>
 
           <div class="entry-symptom">
@@ -140,21 +139,21 @@ onMounted(() => requestEntries())
   margin-bottom: 2rem;
   padding: 1rem;
   border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #f3baba;
+  background: #426e55;
+  border: 1px solid #73986f;
 }
 
 .entries-title {
   margin-top: 0;
   margin-bottom: .75rem;
   font-weight: 700;
-  color: #cb748e;
+  color: #2d4839;
 }
 
 .entry-item {
   padding: .75rem 1rem;
   border-radius: 10px;
-  background: #ffffff;
+  background: #f9ddd8;
   border: 1px solid #f3baba;
 }
 
