@@ -2,7 +2,7 @@
 import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { saveEntry, loadEntry, deleteEntry, hasEntry, type DayEntry } from '../speichern/periodeSpeichern'
-
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,7 +25,9 @@ onMounted(() => {
   }
 })
 
-function save() {
+//M2:
+async function save() {
+
   const entry: DayEntry = {
     date: dateParam,
     periode: periode.value,
@@ -34,8 +36,25 @@ function save() {
     note: note.value
   }
   saveEntry(entry)
-  alert(`Eintrag gespeichert für ${dateParam}`)
+
+  // M4: in Backend speichern
+  const payload = {
+    date: isoToDe(dateParam),        // Backend erwaret nämlicl: DD-MM-YYYY
+    symptom: symptom.value,
+    note: note.value
+  }
+
+  try {
+    await axios.post('http://localhost:8080/api/v1/entries', payload, {
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    })
+    alert(`Eintrag gespeichert (DB) für ${dateParam}`)
+  } catch (err) {
+    console.error(err)
+    alert('Backend-Speichern fehlgeschlagen (POST). Schau in die Konsole.')
+  }
 }
+
 
 function remove() {
   if (!confirm('Eintrag wirklich löschen?')) return
@@ -51,6 +70,12 @@ function remove() {
 function goBack() {
   router.back()
 }
+
+function isoToDe(iso: string) { // M4: dient dazu, dass DD-MM-YYYY ausgeführt, weil Router YYYY-MM-DD liefrt und Backend nun DD...
+  const [y, m, d] = iso.split('-')   // YYYY-MM-DD
+  return `${d}-${m}-${y}` // DD-MM-YYYY
+}
+
 </script>
 
 

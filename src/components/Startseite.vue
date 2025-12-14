@@ -56,10 +56,10 @@ onMounted(() => requestEntries())
             class="entry-item"
             >
           <div class="entry-date">
-            {{ new Date (entry.date).toLocaleDateString('de-DE') }}
-            <!--
-            toLocaleDateString Funktion, die das Datum in ein bestimmtes Sprachformat umwandelt
-            de = Deutsch, DE = Deutschland dementsprechend kommt TT.MM.JJJJ -->
+            <!--{{ new Date(entry.date).toLocaleDateString('de-DE') }} -->
+            <!-- toLocaleDateString Funktion, die das Datum in ein bestimmtes Sprachformat umwandelt de = Deutsch, DE = Deutschland dementsprechend kommt TT.MM.JJJJ -->
+            {{ entry.date }}
+
           </div>
 
           <div class="entry-symptom">
