@@ -1,24 +1,31 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import Kalender from '@/components/Kalendar.vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Kalendar from '@/components/Kalendar.vue'
 
+const route = useRoute()
 const router = useRouter()
 
-// gewählte Tagesinfo
-function handleSelect(payload: { day: number, year: number, month: number }) {
-  // Datum einbauen
-  const m = String(payload.month + 1).padStart(2, '0')
-  const d = String(payload.day).padStart(2, '0')
-  const iso = `${payload.year}-${m}-${d}`
-  router.push({ name: 'eintrag', params: { date: iso } })
+// ?year=2025&month=0  (Monat 0..11)
+const year   = computed(() => Number(route.query.year) || new Date().getFullYear())
+const month0 = computed(() => {
+  const m = Number(route.query.month)
+  return Number.isFinite(m) ? Math.max(0, Math.min(11, m)) : new Date().getMonth()
+})
+
+function handleSelect({ day, year, month }: { day:number; year:number; month:number }) {
+  const m = String(month + 1).padStart(2,'0')
+  const d = String(day).padStart(2,'0')
+  router.push({ name: 'eintrag', params: { date: `${year}-${m}-${d}` } })
 }
 </script>
+
 
 <template>
   <main class="page">
     <h2 class="page-title">Kalender</h2>
     <div class="calendar-area">
-      <Kalender @select = "handleSelect" />
+      <Kalendar :year="year" :month="month0" @select="handleSelect" />
     </div>
   </main>
 </template>
