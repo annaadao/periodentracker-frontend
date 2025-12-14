@@ -45,12 +45,13 @@ async function save() {
   }
 
   try {
-    await axios.post('http://localhost:8080/api/v1/entries', payload, {
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    })
+    const res = await axios.post('http://localhost:8080/api/v1/entries', payload)
+    console.log('POST OK:', res.data)
     alert(`Eintrag gespeichert (DB) für ${dateParam}`)
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    console.error('POST failed:', err)
+    console.error('Status:', err?.response?.status)
+    console.error('Data:', err?.response?.data)
     alert('Backend-Speichern fehlgeschlagen (POST). Schau in die Konsole.')
   }
 }
