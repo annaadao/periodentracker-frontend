@@ -6,9 +6,10 @@ import axios from 'axios'
 defineProps<{ title: string }>()
 
 type PeriodEntry = {
+  id: number;
   date: string;
   symptom: string;
-  note: string
+  note: string;
 }
 
 const router = useRouter()

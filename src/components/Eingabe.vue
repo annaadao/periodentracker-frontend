@@ -45,7 +45,12 @@ async function save() {
   }
 
   try {
-    const res = await axios.post('http://localhost:8080/api/v1/entries', payload)
+    const res = await axios.post('http://localhost:8080/api/v1/entries', payload) // M4: Frontend ruft POST auf
+    // HTTP-POST vom Browser ans Spring-Backend
+    /*
+    Backend erwartet: date, symptom, note
+    --> Das liefert payload
+     */
     console.log('POST OK:', res.data)
     alert(`Eintrag gespeichert (DB) für ${dateParam}`)
   } catch (err: any) {
@@ -56,17 +61,37 @@ async function save() {
   }
 }
 
+//M4: Delete Funktion (CRUD)
+async function remove() {
+  if (!confirm('Willst du den Eintrag wirklich löschen?')) return
 
-function remove() {
-  if (!confirm('Eintrag wirklich löschen?')) return
+  // erst aus der Datenbank löschen
+  try {
+    const deDate = isoToDe(dateParam) // Backend will dd-MM-yyyy
+    await axios.delete(
+      `http://localhost:8080/api/v1/entries/by-date/${encodeURIComponent(deDate)}`
+    )
+    console.log('Eintrag in der DB gelöscht')
+  } catch (err: any) {
+    console.error('DELETE hat nicht geklappt:', err)
+    console.error('Status:', err?.response?.status)
+    console.error('Antwort:', err?.response?.data)
+    alert('Fehler (Konsole schauen)')
+    return
+  }
+
+  // hier lokal löschen, damit es im frontend UI ebenfalls weg ist
   deleteEntry(dateParam)
+
   periode.value = false
   symptom.value = ''
   emotion.value = ''
   note.value = ''
   exists.value = false
+
   router.back()
 }
+
 
 function goBack() {
   router.back()
