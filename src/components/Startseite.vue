@@ -140,15 +140,15 @@ onMounted(() => requestEntries())
   margin-bottom: 2rem;
   padding: 1rem;
   border-radius: 12px;
-  background: #426e55;
-  border: 1px solid #73986f;
+  background: #799567;
+  border: 1px solid #5b744b;
 }
 
 .entries-title {
   margin-top: 0;
   margin-bottom: .75rem;
   font-weight: 700;
-  color: #2d4839;
+  color: #35522b;
 }
 
 .entry-item {
@@ -159,19 +159,23 @@ onMounted(() => requestEntries())
 }
 
 .entry-date {
-  font-size: .9rem;
-  font-weight: 600;
+  font-size: .99rem;
+  font-weight: 800;
   color: #cb748e;
   margin-bottom: .25rem;
 }
 
 .entry-symptom {
-  font-size: .95rem;
+  font-size: .9rem;
+  color: #cb748e;
+  font-weight: 400;
   margin-bottom: .25rem;
 }
 
 .entry-note {
   font-size: .9rem;
+  color: #cb748e;
+  font-weight: 400;
   opacity: .8;
 }
 </style>

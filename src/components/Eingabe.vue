@@ -130,7 +130,6 @@ function isoToDe(iso: string) { // M4: dient dazu, dass DD-MM-YYYY ausgeführt, 
         <button v-if="exists" type="button" class="danger" @click="remove">Löschen</button>
       </div>
     </form>
-
   </main>
 </template>
 
