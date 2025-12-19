@@ -13,6 +13,7 @@ const symptom = ref('')
 const emotion = ref('')
 const note = ref('')
 const exists = ref(false)
+const API = 'https://periodentracker.onrender.com/api/v1'
 
 onMounted(() => {
   const existing = loadEntry(dateParam)
@@ -45,7 +46,8 @@ async function save() {
   }
 
   try {
-    const res = await axios.post('http://localhost:8080/api/v1/entries', payload) // M4: Frontend ruft POST auf
+    const res = await axios.post(`${API}/entries`, payload)
+    // M4: Frontend ruft POST auf
     // HTTP-POST vom Browser ans Spring-Backend
     /*
     Backend erwartet: date, symptom, note
@@ -68,9 +70,8 @@ async function remove() {
   // erst aus der Datenbank löschen
   try {
     const deDate = isoToDe(dateParam) // Backend will dd-MM-yyyy
-    await axios.delete(
-      `http://localhost:8080/api/v1/entries/by-date/${encodeURIComponent(deDate)}`
-    )
+    await axios.delete(`${API}/entries/by-date/${encodeURIComponent(deDate)}`)
+
     console.log('Eintrag in der DB gelöscht')
   } catch (err: any) {
     console.error('DELETE hat nicht geklappt:', err)
