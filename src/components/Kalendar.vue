@@ -44,7 +44,7 @@ const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 function toISO(d: number, m0: number,  y: number) {
   const dd = String(d).padStart(2, '0')
   const mm = String(m0 + 1).padStart(2, '0')
-  return `${dd}-${mm}-${y}`
+  return `${y}-${mm}-${dd}` // ISO YYYY-MM-DD
 }
 
 function isPeriod(d?: number | null) {

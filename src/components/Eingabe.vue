@@ -13,6 +13,10 @@ const symptom = ref('')
 const emotion = ref('')
 const note = ref('')
 const exists = ref(false)
+
+const bleeding = ref(5)
+const pain = ref(5)
+
 const API = 'https://periodentracker.onrender.com/api/v1'
 
 onMounted(() => {
@@ -23,10 +27,13 @@ onMounted(() => {
     symptom.value = existing.symptom ?? ''
     emotion.value = existing.emotion ?? ''
     note.value = existing.note ?? ''
+
+    bleeding.value = existing.bleeding ?? 5
+    pain.value = existing.pain ?? 5
   }
 })
 
-//M2:
+// CREATE
 async function save() {
 
   const entry: DayEntry = {
@@ -34,18 +41,26 @@ async function save() {
     periode: periode.value,
     symptom: symptom.value,
     emotion: emotion.value,
-    note: note.value
+    note: note.value,
+    bleeding: bleeding.value,
+    pain: pain.value
   }
+
+  // lokal speichern
   saveEntry(entry)
+  exists.value = true
 
   // M4: in Backend speichern
   const payload = {
-    date: isoToDe(dateParam),        // Backend erwaret nämlicl: DD-MM-YYYY
+    date: isoToDe(dateParam),        // Backend erwartet: DD-MM-YYYY
     symptom: symptom.value,
     note: note.value
   }
 
   try {
+    // verhindert Duplikate im Backend bei Speichern auf gleichem Datum & ignoriert Fehlermeldung 404
+    await axios.delete(`${API}/entries/by-date/${encodeURIComponent(payload.date)}`).catch(() => {})
+
     const res = await axios.post(`${API}/entries`, payload)
     // M4: Frontend ruft POST auf
     // HTTP-POST vom Browser ans Spring-Backend
@@ -63,7 +78,7 @@ async function save() {
   }
 }
 
-//M4: Delete Funktion (CRUD)
+//M4: DELETE Funktion (CRUD)
 async function remove() {
   if (!confirm('Willst du den Eintrag wirklich löschen?')) return
 
@@ -88,6 +103,8 @@ async function remove() {
   symptom.value = ''
   emotion.value = ''
   note.value = ''
+  bleeding.value = 5
+  pain.value = 5
   exists.value = false
 
   router.back()
@@ -112,19 +129,36 @@ function isoToDe(iso: string) { // M4: dient dazu, dass DD-MM-YYYY ausgeführt, 
 
     <form @submit.prevent="save" class="card">
       <label class ="row">
-        <span>Hast du deine Periode an diesem Tag? :(</span>
+        <span>Hast du deine Periode an diesem Tag? </span>
         <input type="checkbox" v-model="periode" />
       </label>
 
+      <!-- Skalen (nur lokal SPÄTER BEARBEITEN WEGEN BACKEND!) -->
+      <label class="row">
+        <span>Stärke der Blutung:</span>
+        <input type="range" min="0" max="10" v-model="bleeding" />
+        <div class="scale">Wert: <strong>{{ bleeding }}</strong></div>
+      </label>
+
+      <label class="row">
+        <span>Schmerzlevel:</span>
+        <input type="range" min="0" max="10" v-model="pain" />
+        <div class="scale">Wert: <strong>{{ pain }}</strong></div>
+      </label>
+
+      <!-- Symptome -->
       <label class="row">
         <span>Symptome:</span>
         <input v-model="symptom" placeholder="z.B. starke Unterleibschmerzen" />
       </label>
 
+      <!-- Notizen -->
       <label class="row">
         <span>Deine Notizen:</span>
         <textarea v-model="note" rows="3" placeholder="Weitere Details..."></textarea>
       </label>
+
+      <!-- Weiter, Zurück Buttons -->
       <div class="actions">
         <button type="button" @click="goBack">Zurück</button>
         <button type="submit" class="primary">Speichern</button>
@@ -143,26 +177,30 @@ function isoToDe(iso: string) { // M4: dient dazu, dass DD-MM-YYYY ausgeführt, 
   .card {
     display:grid;
     gap:.75rem;
-    border-color: #b3005a;
-    border-radius:12px;
+    border: 1px solid var(--border);
+    border-radius:16px;
     padding:1rem;
-    background-color: #f9ddd8;
+    background: var(--card);
   }
 
-  .row {
-    display:grid;
-    gap:.5rem;
-    color: #7a003c;
-  }
+  .row { display:grid; gap:.5rem; color: var(--text); }
 
   input, textarea, button {
     font: inherit;
     border-radius: 10px;
     padding: .5rem;
+    border: 1px solid var(--border);
   }
 
   button {
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 12px;
   }
+
+.actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+
+.primary { background: var(--sidebar); }
+.danger { background: #f3baba; }
+
+.scale { font-size:.9rem; opacity:.85; }
 </style>

@@ -2,20 +2,20 @@
 import { useRouter } from 'vue-router'
 import { onMounted, ref, type Ref} from 'vue'
 import axios from 'axios'
+import AppLogo from '@/components/Logo.vue'
 
-defineProps<{ title: string }>()
+const router = useRouter()
 
 type PeriodEntry = {
   id: number;
-  date: string;
+  date: string; // in dd-mm-yyyy wegen backend
   symptom: string;
   note: string;
 }
 
-const router = useRouter()
 const periodEntry: Ref<PeriodEntry[]> = ref([])
 
-// Backend aufrufen M3
+// Backend aufrufen M3: Einträge aus Backend laden und anzeigen
 function requestEntries() {
   axios
     .get<PeriodEntry[]>('https://periodentracker.onrender.com/api/v1/entries')
@@ -23,159 +23,119 @@ function requestEntries() {
     .catch((error) => console.log(error))
 }
 
-// hier werden alle Monate in Kalenderform angezeigt
-const monate = [
-  'Januar','Februar','März','April','Mai','Juni',
-  'Juli','August','September','Oktober','November','Dezember'
-]
-const jahr = new Date().getFullYear()
+function deToIso(de: string) {
+  const [dd, mm, yyyy] = de.split('-')
+  return `${yyyy}-${mm}-${dd}`
+}
 
-function openMonat(index: number) {
-  router.push({ name: 'kalender', query: { year: jahr, month: index } })
+function openEntry(entry: PeriodEntry) {
+  router.push({ name: 'eintrag', params: { date: deToIso(entry.date) } })
 }
 
 onMounted(() => requestEntries())
 </script>
 
 <template>
-  <main class="page">
-    <h2 class="page-title">Startseite</h2>
+  <section class="hero">
+    <AppLogo />
+    <h1 class="title">PeriodenTracker</h1>
+    <p class="sub">♡ Tracke Deinen Zyklus – Tag für Tag ♡</p>
+    <button @click="router.push('/kalender')">Zum Kalender</button>
+  </section>
 
-    <!-- M3: Einträge aus dem Backend hier visuell anzeigen lassen -->
-    <section class = "entries-box">
-      <h3 class="entries-title">Deine Einträge</h3>
+  <!-- M3: Einträge sichtbar aus Backend -->
+  <section class="entries-box">
+    <h3 class="entries-title">Deine Einträge (aus DB)</h3>
 
-      <!-- Falls keine Einträge, dann... -->
-      <p v-if="!periodEntry.length">
-        Keine Einträge da - Füge welche hinzu! ^^
-      </p>
+    <p v-if="!periodEntry.length" class="muted">
+      Keine Einträge da – füge welche hinzu! ^^
+    </p>
 
-      <!-- Liste der Einträge -->
-      <ul v-else class="entries-list">
-        <li v-for="(entry, index) in periodEntry"
-            :key="index"
-            class="entry-item"
-            >
-          <div class="entry-date">
-            <!--{{ new Date(entry.date).toLocaleDateString('de-DE') }} -->
-            <!-- toLocaleDateString Funktion, die das Datum in ein bestimmtes Sprachformat umwandelt de = Deutsch, DE = Deutschland dementsprechend kommt TT.MM.JJJJ -->
-            {{ entry.date }}
-
-          </div>
-
-          <div class="entry-symptom">
-            Symptome: <strong>{{ entry.symptom }}</strong>
-          </div>
-
-          <div class="entry-note" v-if="entry.note">
-            Notizen: {{ entry.note }}
-          </div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- M2: Kalendermuster -->
-    <div class="months-grid">
-      <button v-for="(m,i) in monate" :key="m" class="knopf-monat" @click="openMonat(i)">
-        <div class="m-name">{{ m }}</div>
-        <div class="m-year">{{ jahr }}</div>
-      </button>
-    </div>
-  </main>
+    <ul v-else class="entries-list">
+      <li
+        v-for="e in periodEntry"
+        :key="e.id"
+        class="entry-item"
+        @click="openEntry(e)"
+      >
+        <div class="entry-date">{{ e.date }}</div>
+        <div class="entry-symptom">
+          Symptome: <strong>{{ e.symptom }}</strong>
+        </div>
+        <div class="entry-note" v-if="e.note">
+          Notizen: {{ e.note }}
+        </div>
+      </li>
+    </ul>
+  </section>
 </template>
 
 <style scoped>
-.page { max-width:1100px; margin:0 auto; padding:0 1rem 3rem; }
-.page-title { margin:0 0 .75rem 0; font-weight:900; color:#426e55; }
-
-/* ab hier gilt für Kalendermuster-Design */
-.months-grid {
+.hero{
+  min-height: 60vh;
   display:grid;
-  grid-template-columns:repeat(4,minmax(180px,1fr));
-  gap:1rem;
+  place-items:center;
+  text-align:center;
+  gap:10px;
+  margin-bottom: 30px;
 }
 
-@media (max-width:900px){
-  .months-grid{
-    grid-template-columns:repeat(2,minmax(160px,1fr))
-  }
-}
+.title{ margin:0; color:var(--accent); font-weight:900; }
+.sub{ margin:0; opacity:.85; }
 
-@media (max-width:520px){
-  .months-grid{
-    grid-template-columns:1fr
-  }
-}
-
-.knopf-monat{
-  border:1px solid var(--color-border);
-  background: #f9ddd8;
-  border-color: #f3baba;
-  border-radius:12px;
-  padding:1rem;
-  text-align:left;
+.cta{
+  margin-top:10px;
+  padding:10px 22px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
   cursor:pointer;
-  transition:transform .06s, background .2s, border-color .2s;
+}
+.cta:hover{ border-color:var(--accent); }
+
+/* M3 Box Styling (passt zum neuen Look) */
+.entries-box{
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
 }
 
-.knopf-monat:hover{
-  transform:translateY(-1px);
-  background: #f3baba;
-  border-color:#cb748e;
+.entries-title{
+  margin: 0 0 12px 0;
+  font-weight: 900;
+  color: var(--accent);
 }
 
-.m-name{
-  font-weight:700;
-  color: #cb748e;
+.muted{ opacity: .75; }
+
+.entries-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:grid;
+  gap:10px;
 }
 
-.m-year{
-  opacity:.75;
-  font-weight: 300;
-  color: #d698ab;
+.entry-item{
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--sidebar);
+  cursor:pointer;
+}
+.entry-item:hover{ border-color: var(--accent); }
+
+.entry-date{
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 4px;
 }
 
-/* ab hier gilt Einträge-Design */
-.entries-box {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background: #799567;
-  border: 1px solid #5b744b;
+.entry-symptom, .entry-note{
+  font-size: 13px;
 }
-
-.entries-title {
-  margin-top: 0;
-  margin-bottom: .75rem;
-  font-weight: 700;
-  color: #35522b;
-}
-
-.entry-item {
-  padding: .75rem 1rem;
-  border-radius: 10px;
-  background: #f9ddd8;
-  border: 1px solid #f3baba;
-}
-
-.entry-date {
-  font-size: .99rem;
-  font-weight: 800;
-  color: #cb748e;
-  margin-bottom: .25rem;
-}
-
-.entry-symptom {
-  font-size: .9rem;
-  color: #cb748e;
-  font-weight: 400;
-  margin-bottom: .25rem;
-}
-
-.entry-note {
-  font-size: .9rem;
-  color: #cb748e;
-  font-weight: 400;
-  opacity: .8;
-}
+.entry-note{ opacity: .85; }
 </style>

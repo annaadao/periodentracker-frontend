@@ -4,6 +4,9 @@ export type DayEntry = {
   symptom: string;
   emotion?: string;
   note?: string;
+
+  bleeding?: number;   // 0-10
+  pain?: number;       // 0-10
 };
 
 const KEY = 'cycle-entries-v1' as const;
