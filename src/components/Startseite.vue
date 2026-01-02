@@ -36,11 +36,11 @@ onMounted(() => requestEntries())
 </script>
 
 <template>
-  <section class="hero">
-    <AppLogo />
+  <section class="start">
+    <AppLogo class="logo" />
     <h1 class="title">PeriodenTracker</h1>
     <p class="sub">♡ Tracke Deinen Zyklus – Tag für Tag ♡</p>
-    <button @click="router.push('/kalender')">Zum Kalender</button>
+    <button class="zumKalender" @click="router.push('/kalender')">Zum Kalender</button>
   </section>
 
   <!-- M3: Einträge sichtbar aus Backend -->
@@ -71,28 +71,52 @@ onMounted(() => requestEntries())
 </template>
 
 <style scoped>
-.hero{
+.start{
   min-height: 60vh;
   display:grid;
   place-items:center;
   text-align:center;
-  gap:10px;
+  gap:4px;
   margin-bottom: 30px;
 }
 
-.title{ margin:0; color:var(--accent); font-weight:900; }
-.sub{ margin:0; opacity:.85; }
+.logo{
+  transform: scale(3.5);
+  transform-origin: center;
+  margin-bottom: 100px;
+  margin-top: 50px;
+}
 
-.cta{
-  margin-top:10px;
-  padding:10px 22px;
-  border-radius:999px;
-  border:1px solid var(--border);
+.title{
+  margin:0;
+  font-size: 75px;
+  color:var(--accent);
+  font-weight:700;
+  line-height: 0;
+}
+
+.sub{
+  margin: 0;
+  font-size: 30px;
+  opacity:.85;
+  line-height: 0;
+}
+
+.zumKalender{
+  margin-top: 20px;
+  padding: 14px 38px;          /* größer */
+  border-radius: 999px;        /* maximal rund */
+  border: 1px solid var(--border);
   background: var(--sidebar);
   color: var(--text);
-  cursor:pointer;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: .2px;
 }
-.cta:hover{ border-color:var(--accent); }
+.zumKalender:hover{
+  border-color:var(--accent);
+}
 
 /* M3 Box Styling (passt zum neuen Look) */
 .entries-box{

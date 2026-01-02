@@ -46,7 +46,6 @@ const monthLabel = computed(() =>
   <div class="page">
     <div class="topline">
       <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year } })">&lt; {{ year }}</span>
-      <div class="bubble">♡</div>
     </div>
 
     <h2 class="title">♡ Dein Kalender</h2>

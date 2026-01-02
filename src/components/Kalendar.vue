@@ -83,83 +83,92 @@ function isPeriod(d?: number | null) {
 
 <style scoped>
 
-.kalendar {
-  padding: .75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+.kalendar{
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
   width: fit-content;
-  background-color: #f9ddd8;
+  background: var(--card);
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
 }
 
-.toolbar {
-  color: #cb748e;
+.toolbar{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom: .5rem;
+  margin-bottom: 12px;
+  color: var(--accent);
 }
 
-.grid {
-  display: grid;
+.toolbar h3{
+  margin: 0;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.grid{
+  display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: .5rem;
+  gap: 10px;
 }
 
-.header {
-  margin-bottom: .25rem;
+.header{
+  margin-bottom: 10px;
 }
 
-.wk {
-  color: #d698ab;
-  opacity: 1;
-  font-weight: 500;
+.wk{
   text-align:center;
-  font-weight:600;
-  opacity:.8;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent);
+  opacity: .55;
 }
 
-/* wochentage */
-.cell {
+/* Tage */
+.cell{
   position: relative;
-  aspect-ratio: 1/1;
-  background: #d698ab;
-  color: #f9ddd8;
-  border: 1px solid #cb748e;
-  border-radius: .5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--accent);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   font: inherit;
+  font-size: 12px;
+  transition: transform .06s, border-color .15s, background .15s;
 }
 
-.cell:hover { outline: 2px solid #e6a3bb; }
+.cell:hover{
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
 
-.cell.blank {
+.cell.blank{
   background: transparent;
   border-color: transparent;
   cursor: default;
 }
 
-/* Markierung für Tage mit Periode */
-.cell.has-period {
-  background: #b3005a;    /* dunkleres Magenta */
-  border-color: #7a003c;
+/* markiert (Periode) */
+.cell.has-period{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
-.dot {
-  position: absolute;
-  bottom: .25rem;
-  right: .25rem;
-  width: .5rem;
-  height: .5rem;
+.dot{
+  position:absolute;
+  bottom: 5px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
-  background: #fff;       /* auf dunklem Magenta sichtbar */
+  background: var(--pink);
 }
-
-.toolbar h3 {
-  font-weight: 700;
-}
-
 </style>
 

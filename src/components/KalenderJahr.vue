@@ -29,7 +29,6 @@ function openMonth(index:number){
   <div class="page">
     <div class="topline">
       <span class="back" @click="router.push('/home')">&lt; Zurück zur Startseite</span>
-      <div class="bubble">♡</div>
     </div>
 
     <div class="head">
