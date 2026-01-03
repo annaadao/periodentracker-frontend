@@ -92,7 +92,11 @@ const monthLabel = computed(() =>
   opacity:.75;
   cursor:pointer;
 }
-.back:hover{ opacity:1; color:var(--accent); }
+
+.back:hover{
+  opacity:1;
+  color:var(--accent);
+}
 
 .title{
   margin:0;
@@ -136,7 +140,10 @@ const monthLabel = computed(() =>
   cursor:pointer;
   font-size:26px;
 }
-.arrow:hover{ border-color:var(--accent); }
+
+.arrow:hover{
+  border-color:var(--accent);
+}
 
 .right{
   margin-top: 200px;

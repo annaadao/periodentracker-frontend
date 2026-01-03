@@ -91,9 +91,9 @@ watch(
     </div>
 
     <div class="panel" v-if="open">
-      <h4 class="panel-title">Übersicht all Deiner Einträge</h4>
+      <h4 class="panel-title">Eintragsübersicht</h4>
 
-      <p v-if="!entries.length" class="muted">Noch keine Einträge.</p>
+      <p v-if="!entries.length" class="muted">Hier ist noch leer. Erstelle deinen ersten Eintrag!</p>
 
       <ul v-else class="list">
         <li v-for="e in entries" :key="e.id" class="item" @click="openEntry(e)">
@@ -168,7 +168,7 @@ watch(
 .panel-title{
   margin-top: 10px;
   margin-bottom: 80px;
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: .2px;
   color: var(--accent);
@@ -176,7 +176,7 @@ watch(
 
 .muted{
   opacity: .7;
-  font-size: 13px;
+  font-size: 20px;
 }
 
 .list{

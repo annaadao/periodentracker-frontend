@@ -28,19 +28,20 @@ const router = useRouter()
   transform: scale(3.5);
   transform-origin: center;
   margin-bottom: 100px;
-  margin-top: 50px;
+  margin-top: 200px;
 }
 
 .title{
-  margin:0;
   font-size: 75px;
   color:var(--accent);
   font-weight:700;
   line-height: 0;
+  margin-top: 80px;
 }
 
 .sub{
-  margin: 0;
+  margin-top: 30px;
+  margin-bottom: 150px;
   font-size: 30px;
   opacity:.85;
   line-height: 0;
@@ -48,7 +49,7 @@ const router = useRouter()
 
 .zumKalender{
   margin-top: 20px;
-  padding: 14px 38px;
+  padding: 20px 80px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--sidebar);
