@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
-import { useRouter } from "vue-router"
+import { ref, onMounted, onBeforeUnmount, watch } from "vue"
+import { useRouter, useRoute } from "vue-router"
 import axios from "axios"
 
 const router = useRouter()
+const route = useRoute()
+
 const open = ref(false)
 
 type PeriodEntry = {
@@ -16,29 +18,64 @@ type PeriodEntry = {
 const entries = ref<PeriodEntry[]>([])
 const API = "https://periodentracker.onrender.com/api/v1"
 
-async function loadEntries(){
-  try{
+function deToIso(de: string) {
+  const [dd, mm, yyyy] = de.split("-")
+  return `${yyyy}-${mm}-${dd}` // yyyy-mm-dd
+}
+
+async function loadEntries() {
+  try {
     const res = await axios.get<PeriodEntry[]>(`${API}/entries`)
-    entries.value = res.data
-  }catch(e){
+
+    // pro Datum nur ein Eintrag
+    const map = new Map<string, PeriodEntry>()
+    for (const e of res.data) {
+      const existing = map.get(e.date)
+      if (!existing || e.id > existing.id) map.set(e.date, e)
+    }
+
+    entries.value = Array.from(map.values()).sort((a, b) =>
+      deToIso(b.date).localeCompare(deToIso(a.date))
+    )
+  } catch (e) {
     // optional: console.log(e)
   }
 }
 
-function go(path: string){
+function go(path: string) {
   router.push(path)
 }
 
-function deToIso(de: string) {
-  const [dd, mm, yyyy] = de.split('-')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-function openEntry(e: PeriodEntry){
+function openEntry(e: PeriodEntry) {
   router.push({ name: "eintrag", params: { date: deToIso(e.date) } })
 }
 
-onMounted(loadEntries)
+// automatische Aktualisierung, wenn was gespeichert/gelöscht wird
+function refreshEntries() {
+  loadEntries()
+}
+
+onMounted(() => {
+  loadEntries()
+  window.addEventListener("entries-updated", refreshEntries)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("entries-updated", refreshEntries)
+})
+
+// wenn Sidebar geöffnet wird, direkt laden
+watch(open, (isOpen) => {
+  if (isOpen) loadEntries()
+})
+
+// bei Routenwechsel aktualisieren (nur wenn Sidebar offen)
+watch(
+  () => route.fullPath,
+  () => {
+    if (open.value) loadEntries()
+  }
+)
 </script>
 
 <template>
@@ -72,7 +109,6 @@ onMounted(loadEntries)
             <div class="value">{{ e.note }}</div>
           </div>
         </li>
-
       </ul>
     </div>
   </aside>
@@ -91,8 +127,9 @@ onMounted(loadEntries)
   width: 450px;
 }
 
+/* ✅ Icons bleiben in fixer Spalte und sind mittig */
 .iconbar{
-  width: 72px;
+  width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -107,8 +144,11 @@ onMounted(loadEntries)
   border: 1px solid var(--border);
   background: var(--card);
   cursor: pointer;
-  align-items: center;
   font-size: 25px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .iconbtn:hover{
@@ -122,6 +162,7 @@ onMounted(loadEntries)
 .panel{
   flex: 1;
   padding: 18px 16px;
+  overflow: auto;
 }
 
 .panel-title{
@@ -165,7 +206,7 @@ onMounted(loadEntries)
 }
 
 .block{
-  margin-top: 10px;      /* Abstand zwischen den Blöcken */
+  margin-top: 10px;
 }
 
 .label{
@@ -174,7 +215,7 @@ onMounted(loadEntries)
   color: var(--accent);
 }
 
-.value {
+.value{
   margin-top: 4px;
   font-size: 15px;
   opacity: .9;
