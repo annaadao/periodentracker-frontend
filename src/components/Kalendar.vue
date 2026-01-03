@@ -28,7 +28,9 @@ const cells = computed(() => {
 })
 
 const emit = defineEmits<{
-  (e: 'select', payload: { day: number, month: number, year: number }): void
+  (e: 'select', payload:
+   { day: number, month: number, year: number }
+  ): void
 }>()
 
 function selectDay(d: number | null) {
@@ -46,7 +48,6 @@ function toISO(d: number, m0: number,  y: number) {
   const mm = String(m0 + 1).padStart(2, '0')
   return `${y}-${mm}-${dd}` // ISO YYYY-MM-DD
 }
-
 function isPeriod(d?: number | null) {
   if (!d) return false
   return props.periodDates?.has(toISO(d, base.value.m, base.value.y)) ?? false
@@ -57,7 +58,6 @@ function isPeriod(d?: number | null) {
   <div class="kalendar">
     <div class="toolbar">
       <h3>{{ monthLabel }}</h3>
-      <!-- Nächster Monat Button einbauen später -->
     </div>
 
     <div class="grid header">
@@ -125,7 +125,6 @@ function isPeriod(d?: number | null) {
   opacity: .55;
 }
 
-/* Tage */
 .cell{
   position: relative;
   width: 34px;
@@ -154,7 +153,6 @@ function isPeriod(d?: number | null) {
   cursor: default;
 }
 
-/* markiert (Periode) */
 .cell.has-period{
   background: var(--accent);
   border-color: var(--accent);
@@ -170,5 +168,5 @@ function isPeriod(d?: number | null) {
   border-radius: 999px;
   background: var(--pink);
 }
-</style>
 
+</style>

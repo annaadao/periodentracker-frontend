@@ -39,14 +39,17 @@ function goHome() {
 </template>
 
 <style scoped>
-.layout{ display:flex; min-height:100vh; }
+.layout{
+  display:flex;
+  min-height:100vh;
+}
 
 .content{
   flex:1;
-  display:grid;
-  place-items:center;
+  display:flex;
+  justify-content:center;
+  align-items: flex-start;
   padding:40px 20px;
-  position: relative;
 }
 
 .logo-btn{
@@ -63,6 +66,6 @@ function goHome() {
 
 .stage{
   width:100%;
-  max-width:1100px;
+  max-width:1400px;
 }
 </style>

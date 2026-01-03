@@ -10,7 +10,7 @@ type PeriodEntry = {
   id: number
   date: string   // dd-mm-yyyy aus Backend
   symptom: string
-  note?: string
+  note: string
 }
 
 const entries = ref<PeriodEntry[]>([])
@@ -61,8 +61,18 @@ onMounted(loadEntries)
       <ul v-else class="list">
         <li v-for="e in entries" :key="e.id" class="item" @click="openEntry(e)">
           <div class="date">{{ e.date }}</div>
-          <div class="symptom">{{ e.symptom }}</div>
+
+          <div class="block">
+            <div class="label">Symptome:</div>
+            <div class="value">{{ e.symptom }}</div>
+          </div>
+
+          <div class="block">
+            <div class="label">Notizen:</div>
+            <div class="value">{{ e.note }}</div>
+          </div>
         </li>
+
       </ul>
     </div>
   </aside>
@@ -70,47 +80,63 @@ onMounted(loadEntries)
 
 <style scoped>
 .sidebar{
-  width: 72px;
+  width: 100px;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
   display: flex;
   overflow: hidden;
 }
 
-.sidebar.open{ width: 300px; }
+.sidebar.open{
+  width: 450px;
+}
 
 .iconbar{
   width: 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0;
+  padding: 25px 0;
   gap: 14px;
 }
 
 .iconbtn{
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--card);
   cursor: pointer;
-  font-size: 18px;
+  align-items: center;
+  font-size: 25px;
 }
 
-.iconbtn:hover{ border-color: var(--accent); }
-.spacer{ flex: 1; }
+.iconbtn:hover{
+  border-color: var(--accent);
+}
 
-.panel{ flex: 1; padding: 18px 16px; }
+.spacer{
+  flex: 1;
+}
+
+.panel{
+  flex: 1;
+  padding: 18px 16px;
+}
 
 .panel-title{
-  margin: 6px 0 14px;
-  font-size: 12px;
+  margin-top: 10px;
+  margin-bottom: 80px;
+  font-size: 25px;
+  font-weight: 700;
   letter-spacing: .2px;
   color: var(--accent);
 }
 
-.muted{ opacity: .7; font-size: 13px; }
+.muted{
+  opacity: .7;
+  font-size: 13px;
+}
 
 .list{
   list-style: none;
@@ -128,16 +154,30 @@ onMounted(loadEntries)
   cursor: pointer;
 }
 
-.item:hover{ border-color: var(--accent); }
+.item:hover{
+  border-color: var(--accent);
+}
 
 .date{
   font-weight: 800;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 20px;
 }
 
-.symptom{
-  font-size: 13px;
+.block{
+  margin-top: 10px;      /* Abstand zwischen den Blöcken */
+}
+
+.label{
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.value {
+  margin-top: 4px;
+  font-size: 15px;
   opacity: .9;
+  white-space: pre-line;
 }
 </style>

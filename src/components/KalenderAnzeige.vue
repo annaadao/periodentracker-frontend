@@ -45,56 +45,107 @@ const monthLabel = computed(() =>
 <template>
   <div class="page">
     <div class="topline">
-      <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year } })">&lt; {{ year }}</span>
+      <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year } })">
+        &lt; {{ year }}
+      </span>
+
     </div>
 
     <h2 class="title">♡ Dein Kalender</h2>
 
-    <div class="head">
-      <button class="arrow" @click="prevMonth">‹</button>
-      <div class="m-title">{{ monthLabel }}</div>
-      <button class="arrow" @click="nextMonth">›</button>
-    </div>
+    <div class="contentGrid">
+      <div class="left">
+        <div class="monthNav">
+          <button class="arrow" @click="prevMonth">‹</button>
+          <div class="monthBig">{{ monthLabel }}</div>
+          <button class="arrow" @click="nextMonth">›</button>
+        </div>
+      </div>
 
-    <div class="calendar-wrap">
-      <Kalendar :year="year" :month="month0" :periodDates="periodDates" @select="handleSelect" />
+      <div class="right">
+        <Kalendar
+          :year="year"
+          :month="month0"
+          :periodDates="periodDates"
+          @select="handleSelect"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page{ display:grid; gap:18px; }
-.topline{ display:flex; justify-content:space-between; align-items:center; }
-.back{ font-size:12px; opacity:.75; cursor:pointer; }
-.back:hover{ opacity:1; color:var(--accent); }
-.bubble{
-  width:34px; height:34px; border-radius:999px;
-  border:2px solid var(--accent); display:grid; place-items:center;
+.page{
+  display:grid;
+  gap:18px;
+  grid-template-rows: auto auto 1fr;
 }
-.title{ margin:0; font-weight:900; color:var(--accent); }
 
-.head{
+.topline{
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  gap:16px;
-  max-width:520px;
+  align-items:center;
 }
 
-.m-title{
-  flex:1;
-  text-align:center;
-  font-size:44px;
+.back{
+  font-size:12px;
+  opacity:.75;
+  cursor:pointer;
+}
+.back:hover{ opacity:1; color:var(--accent); }
+
+.title{
+  margin:0;
+  font-size: 40px;
   font-weight:900;
   color:var(--accent);
 }
 
+.contentGrid{
+  align-self: center;
+  justify-self: center;
+  display:grid;
+  grid-template-columns: auto auto;
+  gap:110px;
+  align-items: center;
+}
+
+.left{
+  padding-top:0;
+}
+
+.monthNav{
+  display:grid;
+  grid-template-columns: 56px 1fr 56px;
+  align-items:center;
+  gap:18px;
+}
+
+.monthBig{
+  font-size:64px;
+  font-weight:900;
+  color:var(--accent);
+  line-height:1;
+}
+
 .arrow{
-  width:44px; height:44px; border-radius:14px;
-  border:1px solid var(--border); background:var(--card);
-  cursor:pointer; font-size:22px;
+  width:56px; height:56px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:var(--card);
+  cursor:pointer;
+  font-size:26px;
 }
 .arrow:hover{ border-color:var(--accent); }
 
-.calendar-wrap{ display:grid; place-items:center; }
+.right{
+  margin-top: 200px;
+  padding-left: 40px;
+}
+
+@media (max-width: 900px){
+  .contentGrid{ grid-template-columns: 1fr; }
+  .right{ justify-content:center; }
+  .monthBig{ text-align:center; }
+}
 </style>
