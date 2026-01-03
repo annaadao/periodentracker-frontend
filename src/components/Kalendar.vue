@@ -56,12 +56,9 @@ function isPeriod(d?: number | null) {
 
 <template>
   <div class="kalendar">
-    <div class="toolbar">
-      <h3>{{ monthLabel }}</h3>
-    </div>
-
+    <div class="toolbar"></div>
     <div class="grid header">
-      <div v-for="w in weekdays" :key="w" class="wk">{{ w }}</div>
+      <div v-for="w in weekdays" :key="w" class="wochentage">{{ w }}</div>
     </div>
 
     <div class="grid">
@@ -100,13 +97,6 @@ function isPeriod(d?: number | null) {
   color: var(--accent);
 }
 
-.toolbar h3{
-  margin: 0;
-  font-weight: 900;
-  font-size: 16px;
-  color: var(--accent);
-}
-
 .grid{
   display:grid;
   grid-template-columns: repeat(7, 1fr);
@@ -117,18 +107,19 @@ function isPeriod(d?: number | null) {
   margin-bottom: 10px;
 }
 
-.wk{
+.wochentage{
   text-align:center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 20px;
   color: var(--accent);
   opacity: .55;
+  gap: 20px;
 }
 
 .cell{
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 50px;
+  height: 50px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--sidebar);
@@ -138,7 +129,8 @@ function isPeriod(d?: number | null) {
   align-items:center;
   justify-content:center;
   font: inherit;
-  font-size: 12px;
+  font-size: 16px;
+  gap:25px;
   transition: transform .06s, border-color .15s, background .15s;
 }
 

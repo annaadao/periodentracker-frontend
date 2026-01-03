@@ -45,15 +45,15 @@ const monthLabel = computed(() =>
 <template>
   <div class="page">
     <div class="topline">
-      <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year } })">
+      <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year: year.value } })">
         &lt; {{ year }}
       </span>
-
     </div>
 
-    <h2 class="title">♡ Dein Kalender</h2>
+    <h2 class="deinKalender">♡ Dein Kalender</h2>
 
     <div class="contentGrid">
+      <!-- links: Monat (wie Jahr links das Jahr) -->
       <div class="left">
         <div class="monthNav">
           <button class="arrow" @click="prevMonth">‹</button>
@@ -62,13 +62,16 @@ const monthLabel = computed(() =>
         </div>
       </div>
 
+      <!-- rechts: Kalender (Position wie Monats-Grid in KalenderJahr) -->
       <div class="right">
-        <Kalendar
-          :year="year"
-          :month="month0"
-          :periodDates="periodDates"
-          @select="handleSelect"
-        />
+        <div class="calendarWrap">
+          <Kalendar
+            :year="year"
+            :month="month0"
+            :periodDates="periodDates"
+            @select="handleSelect"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -92,15 +95,14 @@ const monthLabel = computed(() =>
   opacity:.75;
   cursor:pointer;
 }
-
 .back:hover{
   opacity:1;
   color:var(--accent);
 }
 
-.title{
+.deinKalender{
   margin:0;
-  font-size: 40px;
+  font-size:40px;
   font-weight:900;
   color:var(--accent);
 }
@@ -111,13 +113,10 @@ const monthLabel = computed(() =>
   display:grid;
   grid-template-columns: auto auto;
   gap:110px;
-  align-items: center;
+  align-items:center;
 }
 
-.left{
-  padding-top:0;
-}
-
+/* links: Monat */
 .monthNav{
   display:grid;
   grid-template-columns: 56px 1fr 56px;
@@ -126,33 +125,68 @@ const monthLabel = computed(() =>
 }
 
 .monthBig{
-  font-size:64px;
-  font-weight:900;
+  font-size:100px;
+  font-weight:700;
   color:var(--accent);
   line-height:1;
+  text-align:center;
+  min-width: 160px;
+  margin-top: 100px;
+  margin-right: 20px;
+  margin-left: 20px;
 }
 
+/* Pfeile wie in KalenderJahr */
 .arrow{
-  width:56px; height:56px;
+  width:60px;
+  height:70px;
   border-radius:16px;
   border:1px solid var(--border);
   background:var(--card);
   cursor:pointer;
-  font-size:26px;
-}
+  font-size:50px;
+  margin-top: 110px;
 
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 .arrow:hover{
   border-color:var(--accent);
 }
 
+/* rechts: Kalender-Position an Monatsgrid angelehnt */
 .right{
-  margin-top: 200px;
   padding-left: 40px;
 }
 
-@media (max-width: 900px){
-  .contentGrid{ grid-template-columns: 1fr; }
-  .right{ justify-content:center; }
-  .monthBig{ text-align:center; }
+.calendarWrap{
+  margin-top: 270px;
+  margin-left: 10px;
 }
+
+/* Responsive wie bei KalenderJahr */
+@media (max-width: 900px){
+  .contentGrid{
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .right{
+    padding-left: 0;
+  }
+  .calendarWrap{
+    margin-top: 0;
+    margin-left: 0;
+    display:flex;
+    justify-content:center;
+  }
+  .monthBig{
+    text-align:center;
+    margin-top: 0;
+  }
+  .arrow{
+    margin-top: 0;
+  }
+}
+
 </style>
