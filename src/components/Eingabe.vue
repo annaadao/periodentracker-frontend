@@ -1,206 +1,512 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
-import { saveEntry, loadEntry, deleteEntry, hasEntry, type DayEntry } from '../speichern/periodeSpeichern'
-import axios from 'axios'
+import { computed, onMounted, ref } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import axios from "axios"
 
 const route = useRoute()
 const router = useRouter()
-const dateParam = route.params.date as string // YYYY-MM-DD
 
-const periode = ref(false)
-const symptom = ref('')
-const emotion = ref('')
-const note = ref('')
-const exists = ref(false)
+const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentracker.onrender.com/api/v1"
 
-const bleeding = ref(5)
-const pain = ref(5)
+const isoDate = computed(() => route.params.date as string) // YYYY-MM-DD
 
-const API = 'https://periodentracker.onrender.com/api/v1'
-
-onMounted(() => {
-  const existing = loadEntry(dateParam)
-  exists.value = hasEntry(dateParam)
-  if (existing) {
-    periode.value = !!existing.periode
-    symptom.value = existing.symptom ?? ''
-    emotion.value = existing.emotion ?? ''
-    note.value = existing.note ?? ''
-
-    bleeding.value = existing.bleeding ?? 5
-    pain.value = existing.pain ?? 5
-  }
-})
-
-// CREATE
-async function save() {
-
-  const entry: DayEntry = {
-    date: dateParam,
-    periode: periode.value,
-    symptom: symptom.value,
-    emotion: emotion.value,
-    note: note.value,
-    bleeding: bleeding.value,
-    pain: pain.value
-  }
-
-  // lokal speichern
-  saveEntry(entry)
-  exists.value = true
-
-  // M4: in Backend speichern
-  const payload = {
-    date: isoToDe(dateParam),        // Backend erwartet: DD-MM-YYYY
-    symptom: symptom.value,
-    note: note.value
-  }
-
-  try {
-    // verhindert Duplikate im Backend bei Speichern auf gleichem Datum & ignoriert Fehlermeldung 404
-    await axios.delete(`${API}/entries/by-date/${encodeURIComponent(payload.date)}`).catch(() => {})
-
-    const res = await axios.post(`${API}/entries`, payload)
-    // M4: Frontend ruft POST auf
-    // HTTP-POST vom Browser ans Spring-Backend
-    /*
-    Backend erwartet: date, symptom, note
-    --> Das liefert payload
-     */
-    console.log('POST OK:', res.data)
-    alert(`Eintrag gespeichert (DB) für ${dateParam}`)
-  } catch (err: any) {
-    console.error('POST failed:', err)
-    console.error('Status:', err?.response?.status)
-    console.error('Data:', err?.response?.data)
-    alert('Backend-Speichern fehlgeschlagen (POST). Schau in die Konsole.')
-  }
+function isoToDe(iso: string) {
+  const [y, m, d] = iso.split("-")
+  return `${d}-${m}-${y}` // dd-mm-yyyy (Backend)
 }
 
-//M4: DELETE Funktion (CRUD)
-async function remove() {
-  if (!confirm('Willst du den Eintrag wirklich löschen?')) return
+function deToIso(de: string) {
+  const [dd, mm, yyyy] = de.split("-")
+  return `${yyyy}-${mm}-${dd}`
+}
 
-  // erst aus der Datenbank löschen
-  try {
-    const deDate = isoToDe(dateParam) // Backend will dd-MM-yyyy
-    await axios.delete(`${API}/entries/by-date/${encodeURIComponent(deDate)}`)
+type PeriodEntry = {
+  id?: number
+  date: string // dd-mm-yyyy
+  symptom?: string
+  note?: string
 
-    console.log('Eintrag in der DB gelöscht')
-  } catch (err: any) {
-    console.error('DELETE hat nicht geklappt:', err)
-    console.error('Status:', err?.response?.status)
-    console.error('Antwort:', err?.response?.data)
-    alert('Fehler (Konsole schauen)')
+  // NEU (Backend später):
+  periode?: boolean
+  bleeding?: number // 1..3
+  pain?: number // 0..3
+  mood?: number // 1..5
+  meds?: string[] // z.B. ["Schmerzmittel","Wärme"]
+}
+
+const entryId = ref<number | null>(null)
+
+const periode = ref<boolean | null>(null)
+
+const bleeding = ref<number>(2) // 1 leicht, 2 mittel, 3 stark
+const pain = ref<number>(1) // 0 keine, 1 leicht, 2 mittel, 3 stark
+const symptom = ref<string>("")
+const mood = ref<number>(3) // 1..5
+const meds = ref<string[]>([])
+const note = ref<string>("")
+
+const moodOptions = [
+  { v: 1, emoji: "😡", label: "wütend" },
+  { v: 2, emoji: "😢", label: "traurig" },
+  { v: 3, emoji: "😐", label: "neutral" },
+  { v: 4, emoji: "🙂", label: "glücklich" },
+  { v: 5, emoji: "😁", label: "sehr glücklich" },
+]
+
+const medOptions = ["Schmerzmittel", "Krampflöser", "Wärme", "Nichts"] as const
+
+function toggleMed(m: string) {
+  if (m === "Nichts") {
+    meds.value = ["Nichts"]
     return
   }
+  // wenn nichts aktiv war raus
+  meds.value = meds.value.filter((x) => x !== "Nichts")
 
-  // hier lokal löschen, damit es im frontend UI ebenfalls weg ist
-  deleteEntry(dateParam)
-
-  periode.value = false
-  symptom.value = ''
-  emotion.value = ''
-  note.value = ''
-  bleeding.value = 5
-  pain.value = 5
-  exists.value = false
-
-  router.back()
+  if (meds.value.includes(m)) meds.value = meds.value.filter((x) => x !== m)
+  else meds.value = [...meds.value, m]
 }
 
-
-function goBack() {
-  router.back()
+function storageKey() {
+  return `entryDraft:${isoDate.value}`
 }
 
-function isoToDe(iso: string) { // M4: dient dazu, dass DD-MM-YYYY ausgeführt, weil Router YYYY-MM-DD liefrt und Backend nun DD...
-  const [y, m, d] = iso.split('-')   // YYYY-MM-DD
-  return `${d}-${m}-${y}` // DD-MM-YYYY
+// lokal zwischenspeichern, damit UI schon funktioniert, bevor Backend erweitert ist
+function saveLocalDraft() {
+  const payload = {
+    periode: periode.value,
+    bleeding: bleeding.value,
+    pain: pain.value,
+    symptom: symptom.value,
+    mood: mood.value,
+    meds: meds.value,
+    note: note.value,
+  }
+  localStorage.setItem(storageKey(), JSON.stringify(payload))
 }
 
+function loadLocalDraft() {
+  const raw = localStorage.getItem(storageKey())
+  if (!raw) return
+  try {
+    const d = JSON.parse(raw)
+    if (typeof d.periode === "boolean") periode.value = d.periode
+    if (typeof d.bleeding === "number") bleeding.value = d.bleeding
+    if (typeof d.pain === "number") pain.value = d.pain
+    if (typeof d.symptom === "string") symptom.value = d.symptom
+    if (typeof d.mood === "number") mood.value = d.mood
+    if (Array.isArray(d.meds)) meds.value = d.meds
+    if (typeof d.note === "string") note.value = d.note
+  } catch {}
+}
+
+async function loadFromBackend() {
+  try {
+    const res = await axios.get<PeriodEntry[]>(`${API}/entries`)
+    const targetDe = isoToDe(isoDate.value)
+    const found = res.data.find((e) => e.date === targetDe)
+    if (!found) return
+
+    entryId.value = found.id ?? null
+    symptom.value = found.symptom ?? ""
+    note.value = found.note ?? ""
+
+    // diese Felder kommen erst, wenn Backend sie hat:
+    if (typeof found.periode === "boolean") periode.value = found.periode
+    if (typeof found.bleeding === "number") bleeding.value = found.bleeding
+    if (typeof found.pain === "number") pain.value = found.pain
+    if (typeof found.mood === "number") mood.value = found.mood
+    if (Array.isArray(found.meds)) meds.value = found.meds
+  } catch {}
+}
+
+async function saveToBackend() {
+  const payload: PeriodEntry = {
+    date: isoToDe(isoDate.value),
+    symptom: symptom.value,
+    note: note.value,
+
+    // !!Wenn Backend da ist, auskommentieren
+    //periode: periode.value ?? undefined,
+    //bleeding: bleeding.value,
+    //pain: pain.value,
+    //mood: mood.value,
+    //meds: meds.value,
+  }
+
+  if (entryId.value) {
+    await axios.put(`${API}/entries/${entryId.value}`, payload)
+  } else {
+    const res = await axios.post(`${API}/entries`, payload)
+    // falls Backend ID zurückgibt:
+    entryId.value = res.data?.id ?? entryId.value
+  }
+}
+
+async function deleteFromBackend() {
+  if (!entryId.value) return
+  await axios.delete(`${API}/entries/${entryId.value}`)
+  entryId.value = null
+}
+
+async function onSave() {
+  // lokal speichern (damit UI funktioniert)
+  saveLocalDraft()
+
+  // Backend speichern (ggf. erstmal nur date/symptom/note)
+  await saveToBackend()
+
+  router.push({ name: "kalender-monat", query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 } })
+}
+
+async function onDelete() {
+  localStorage.removeItem(storageKey())
+  await deleteFromBackend()
+  router.push({ name: "kalender-monat", query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 } })
+}
+
+onMounted(async () => {
+  loadLocalDraft()
+  await loadFromBackend()
+})
 </script>
 
-
 <template>
-  <main class="page">
-    <h2>Eintrag für {{ dateParam }}</h2>
+  <section class="entryCard">
+    <h2 class="entryTitle">Eintrag für {{ isoDate }}</h2>
 
-    <form @submit.prevent="save" class="card">
-      <label class ="row">
-        <span>Hast du deine Periode an diesem Tag? </span>
-        <input type="checkbox" v-model="periode" />
-      </label>
-
-      <!-- Skalen (nur lokal SPÄTER BEARBEITEN WEGEN BACKEND!) -->
-      <label class="row">
-        <span>Stärke der Blutung:</span>
-        <input type="range" min="0" max="10" v-model="bleeding" />
-        <div class="scale">Wert: <strong>{{ bleeding }}</strong></div>
-      </label>
-
-      <label class="row">
-        <span>Schmerzlevel:</span>
-        <input type="range" min="0" max="10" v-model="pain" />
-        <div class="scale">Wert: <strong>{{ pain }}</strong></div>
-      </label>
-
-      <!-- Symptome -->
-      <label class="row">
-        <span>Symptome:</span>
-        <input v-model="symptom" placeholder="z.B. starke Unterleibschmerzen" />
-      </label>
-
-      <!-- Notizen -->
-      <label class="row">
-        <span>Deine Notizen:</span>
-        <textarea v-model="note" rows="3" placeholder="Weitere Details..."></textarea>
-      </label>
-
-      <!-- Weiter, Zurück Buttons -->
-      <div class="actions">
-        <button type="button" @click="goBack">Zurück</button>
-        <button type="submit" class="primary">Speichern</button>
-        <button v-if="exists" type="button" class="danger" @click="remove">Löschen</button>
+    <!-- Periode Ja/Nein -->
+    <div class="block">
+      <div class="labelBig">Hast du an dem Tag Deine Periode?</div>
+      <div class="radioRow">
+        <label class="radio">
+          <input type="radio" name="periode" :checked="periode === true" @change="periode = true" />
+          <span>Ja</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="periode" :checked="periode === false" @change="periode = false" />
+          <span>Nein</span>
+        </label>
       </div>
-    </form>
-  </main>
+    </div>
+
+    <!-- Blutung -->
+    <div class="block">
+      <div class="labelBig">Stärke der Blutung:</div>
+      <input class="range heartThumb" type="range" min="1" max="3" step="1" v-model="bleeding" />
+      <div class="rangeLabels three">
+        <span>leicht</span><span>mittel</span><span>stark</span>
+      </div>
+    </div>
+
+    <!-- Schmerz -->
+    <div class="block">
+      <div class="labelBig">Schmerzlevel:</div>
+      <input class="range heartThumb" type="range" min="0" max="3" step="1" v-model="pain" />
+      <div class="rangeLabels four">
+        <span>keine</span><span>leicht</span><span>mittel</span><span>stark</span>
+      </div>
+    </div>
+
+    <!-- Symptome -->
+    <div class="block">
+      <div class="labelBig">Symptome:</div>
+      <textarea class="text" v-model="symptom" placeholder="z.B. starke Unterleibsschmerzen" />
+    </div>
+
+    <!-- Stimmung -->
+    <div class="block">
+      <div class="labelBig">Wie geht es Dir?</div>
+      <div class="moodRow">
+        <button
+          v-for="m in moodOptions"
+          :key="m.v"
+          class="moodBtn"
+          :class="{ active: mood === m.v }"
+          type="button"
+          @click="mood = m.v"
+          :aria-label="m.label"
+          :title="m.label"
+        >
+          <span class="emoji">{{ m.emoji }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Medikamente -->
+    <div class="block">
+      <div class="labelBig">Nimmst du Medikamente?</div>
+      <div class="chipRow">
+        <button
+          v-for="m in medOptions"
+          :key="m"
+          class="chip"
+          :class="{ active: meds.includes(m) }"
+          type="button"
+          @click="toggleMed(m)"
+        >
+          {{ m }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Notizen -->
+    <div class="block">
+      <div class="labelBig">Notizen:</div>
+      <textarea class="area" v-model="note" placeholder="Weitere Details..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" type="button" @click="router.back()">Zurück</button>
+      <button class="btn" type="button" @click="onSave">Speichern</button>
+      <button class="btn danger" type="button" @click="onDelete" :disabled="!entryId">Löschen</button>
+    </div>
+  </section>
 </template>
 
-
 <style scoped>
-  .page {
-    padding: 1rem;
-  }
+.entryCard{
+  border:1px solid var(--border);
+  background: var(--card);
+  border-radius: 18px;
+  padding: 30px;
+  max-width: 1100px;
+  margin-left: 120px;
+}
 
-  .card {
-    display:grid;
-    gap:.75rem;
-    border: 1px solid var(--border);
-    border-radius:16px;
-    padding:1rem;
-    background: var(--card);
-  }
+/* Eintrag für xxxx */
+.entryTitle{
+  margin: 0 0 12px 0;
+  margin-bottom: 60px;
+  color: var(--accent);
+  font-weight: 900;
+  font-size: 40px;
+}
 
-  .row { display:grid; gap:.5rem; color: var(--text); }
+.block{
+  margin-top: 16px;
+}
 
-  input, textarea, button {
-    font: inherit;
-    border-radius: 10px;
-    padding: .5rem;
-    border: 1px solid var(--border);
-  }
+/* Alle Überschriften zu den Funktionen */
+.labelBig{
+  font-weight: 750;
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  margin-top: 40px;
+}
 
-  button {
-    cursor: pointer;
-    border-radius: 12px;
-  }
+/* Ja/Nein Abstand */
+.radioRow{
+  display:flex;
+  gap:90px;
+  align-items:center;
+}
 
-.actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+.radio{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+}
 
-.primary { background: var(--sidebar); }
-.danger { background: #f3baba; }
+/* Inputs */
+.text{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
 
-.scale { font-size:.9rem; opacity:.85; }
+.area{
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  resize: vertical;
+}
+
+.moodRow{
+  display:flex;
+  gap:200px;
+  align-items:center;
+}
+
+.moodBtn{
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition: transform .06s, border-color .15s;
+}
+
+.moodBtn:hover{
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.moodBtn.active{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+.emoji{
+  font-size: 22px;
+}
+
+.chipRow{
+  display:flex;
+  flex-wrap: wrap;
+  gap:150px;
+  margin-top: 20px;
+}
+
+.chip{
+  padding: 12px 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  cursor:pointer;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.chip.active{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.actions{
+  margin-top: 18px;
+  display:flex;
+  gap: 12px;
+}
+
+/* Zurück, Speichern, Löschen Buttons */
+.btn{
+  padding: 15px 30px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  cursor:pointer;
+  font-weight: 800;
+  font-size:16px;
+}
+
+.btn:hover{
+  border-color: var(--accent);
+}
+
+.btn.ghost{
+  background: transparent;
+}
+
+.btn.danger{
+  opacity: .9;
+}
+
+.btn:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.range{
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 18%, var(--sidebar));
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+.range::-webkit-slider-runnable-track{
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 18%, var(--sidebar));
+}
+
+.range::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  background: var(--card);
+  cursor: pointer;
+  margin-top: -7px;
+}
+
+.range::-moz-range-track{
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 18%, var(--sidebar));
+  border: 1px solid var(--border);
+}
+.range::-moz-range-thumb{
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  background: var(--card);
+  cursor: pointer;
+}
+
+/* Herz statt Punkt */
+.heartThumb::-webkit-slider-thumb{
+  background: var(--card);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23d06a88' d='M12 21s-7.2-4.6-9.6-8.7C.6 9 .9 6.2 3 4.5 4.9 3 7.6 3.3 9.3 5c.6.6 1.1 1.3 1.4 2 .3-.7.8-1.4 1.4-2 1.7-1.7 4.4-2 6.3-.5 2.1 1.7 2.4 4.5.6 7.8C19.2 16.4 12 21 12 21z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.heartThumb::-moz-range-thumb{
+  background: var(--card);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23d06a88' d='M12 21s-7.2-4.6-9.6-8.7C.6 9 .9 6.2 3 4.5 4.9 3 7.6 3.3 9.3 5c.6.6 1.1 1.3 1.4 2 .3-.7.8-1.4 1.4-2 1.7-1.7 4.4-2 6.3-.5 2.1 1.7 2.4 4.5.6 7.8C19.2 16.4 12 21 12 21z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.rangeLabels{
+  margin-top: 8px;
+  display:grid;
+  font-size: 12px;
+  opacity: .8;
+}
+
+.rangeLabels.three{
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.rangeLabels.four{
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.rangeLabels span{
+  text-align: center;
+}
+
 </style>
