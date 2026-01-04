@@ -76,7 +76,7 @@ function openMonth(index:number){
 }
 
 .back{
-  font-size:12px;
+  font-size:20px;
   opacity:.75;
   cursor:pointer;
 }
@@ -111,7 +111,7 @@ function openMonth(index:number){
 }
 
 .yearBig{
-  font-size:100px;
+  font-size:85px;
   font-weight:700;
   color:var(--accent);
   line-height:1;
@@ -130,7 +130,7 @@ function openMonth(index:number){
   background:var(--card);
   cursor:pointer;
   font-size:50px;
-  margin-top: 270px;
+  margin-top: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,9 +148,9 @@ function openMonth(index:number){
 .grid{
   display:grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
-  gap:25px;
+  gap:30px;
   margin-top: 270px;
-  margin-left: 10px;
+  margin-left: 0px;
 }
 
 .month{
@@ -167,7 +167,7 @@ function openMonth(index:number){
 
 .m-name{
   font-weight:500;
-  font-size: 16px;
+  font-size: 18px;
   color:var(--accent);
 }
 

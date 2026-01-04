@@ -22,10 +22,16 @@ const daysInMonth = computed(() => new Date(base.value.y, base.value.m + 1, 0).g
 const offset = computed(() => (firstDay.value + 6) % 7)
 
 const cells = computed(() => {
-  const blanks = Array.from({ length: offset.value }, () => null as number | null)
+  const blanksStart = Array.from({ length: offset.value }, () => null as number | null)
   const days = Array.from({ length: daysInMonth.value }, (_, i) => i + 1)
-  return [...blanks, ...days]
+
+  const all = [...blanksStart, ...days]
+  const missing = 42 - all.length
+  const blanksEnd = Array.from({ length: Math.max(0, missing) }, () => null as number | null)
+
+  return [...all, ...blanksEnd]
 })
+
 
 const emit = defineEmits<{
   (e: 'select', payload:
@@ -81,10 +87,10 @@ function isPeriod(d?: number | null) {
 <style scoped>
 
 .kalendar{
-  padding: 18px;
+  padding: 26px;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  width: fit-content;
+  border-radius: 22px;
+  width: 520px;
   background: var(--card);
   box-shadow: 0 1px 0 rgba(0,0,0,.02);
 }
@@ -100,11 +106,11 @@ function isPeriod(d?: number | null) {
 .grid{
   display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  gap: 14px;
 }
 
 .header{
-  margin-bottom: 10px;
+  margin-bottom: 22px;
 }
 
 .wochentage{
@@ -113,14 +119,14 @@ function isPeriod(d?: number | null) {
   font-size: 20px;
   color: var(--accent);
   opacity: .55;
-  gap: 20px;
+  padding-bottom: 6px;
 }
 
 .cell{
   position: relative;
   width: 50px;
   height: 50px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--sidebar);
   color: var(--accent);
@@ -161,4 +167,10 @@ function isPeriod(d?: number | null) {
   background: var(--pink);
 }
 
+@media (max-width: 600px) {
+  .kalendar {
+    width: 100%;
+    max-width: 520px;
+  }
+}
 </style>
