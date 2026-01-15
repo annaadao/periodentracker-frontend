@@ -10,7 +10,6 @@ const router = createRouter({
     { path: '/', redirect: '/home' },
     { path: '/home', name: 'home', component: Startseite },
 
-    // 1. Monat
     { path: '/kalender', name: 'kalender-jahr', component: KalenderJahr },
 
     // 2. Tage im Monat
