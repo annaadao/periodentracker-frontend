@@ -16,7 +16,7 @@ type PeriodEntry = {
 }
 
 const entries = ref<PeriodEntry[]>([])
-const API = "https://periodentracker.onrender.com/api/v1"
+const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentracker.onrender.com/api/v1"
 
 function deToIso(de: string) {
   const [dd, mm, yyyy] = de.split("-")

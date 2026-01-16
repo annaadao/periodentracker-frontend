@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import Kalendar from '@/components/Kalendar.vue'
-import { periodDatesForMonth } from '@/speichern/periodeSpeichern'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import axios from "axios"
+import Kalendar from "@/components/Kalendar.vue"
 
 const route = useRoute()
 const router = useRouter()
+
+const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentracker.onrender.com/api/v1"
 
 const year = computed(() => Number(route.query.year) || new Date().getFullYear())
 const month0 = computed(() => {
@@ -13,42 +15,95 @@ const month0 = computed(() => {
   return Number.isFinite(m) ? Math.max(0, Math.min(11, m)) : new Date().getMonth()
 })
 
-const periodDates = computed(() => periodDatesForMonth(year.value, month0.value))
-
-function setMonth(y:number, m0:number){
-  router.replace({ name:'kalender-monat', query:{ year: y, month: m0 } })
+type PeriodEntry = {
+  id?: number
+  date: string // dd-MM-yyyy
+  symptom?: string
+  note?: string
+  periode?: boolean
+  bleeding?: number
+  pain?: number
+  mood?: number
+  meds?: string[]
 }
 
-function prevMonth(){
+const entries = ref<PeriodEntry[]>([])
+
+function deToIso(de: string) {
+  const [dd, mm, yyyy] = de.split("-")
+  return `${yyyy}-${mm}-${dd}`
+}
+
+async function loadEntriesFromBackend() {
+  try {
+    const res = await axios.get<PeriodEntry[]>(`${API}/entries`)
+    entries.value = res.data ?? []
+  } catch {
+    entries.value = []
+  }
+}
+
+const periodDates = computed(() => {
+  const set = new Set<string>()
+
+  for (const e of entries.value) {
+    if (!e?.date) continue
+    if (e.periode !== true) continue
+
+    const iso = deToIso(e.date)
+    const y = Number(iso.slice(0, 4))
+    const m0 = Number(iso.slice(5, 7)) - 1
+
+    if (y === year.value && m0 === month0.value) set.add(iso)
+  }
+  return set
+})
+
+function setMonth(y: number, m0: number) {
+  router.replace({ name: "kalender-monat", query: { year: y, month: m0 } })
+}
+function prevMonth() {
   const d = new Date(year.value, month0.value, 1)
   d.setMonth(d.getMonth() - 1)
   setMonth(d.getFullYear(), d.getMonth())
 }
-
-function nextMonth(){
+function nextMonth() {
   const d = new Date(year.value, month0.value, 1)
   d.setMonth(d.getMonth() + 1)
   setMonth(d.getFullYear(), d.getMonth())
 }
-
-function handleSelect({ day, year, month }: { day:number; year:number; month:number }) {
-  const m = String(month + 1).padStart(2,'0')
-  const d = String(day).padStart(2,'0')
-  router.push({ name: 'eintrag', params: { date: `${year}-${m}-${d}` } })
+function handleSelect({ day, year, month }: { day: number; year: number; month: number }) {
+  const m = String(month + 1).padStart(2, "0")
+  const d = String(day).padStart(2, "0")
+  router.push({ name: "eintrag", params: { date: `${year}-${m}-${d}` } })
 }
 
 const monthLabel = computed(() =>
-  new Date(year.value, month0.value, 1).toLocaleString('de-DE', { month: 'long' })
+  new Date(year.value, month0.value, 1).toLocaleString("de-DE", { month: "long" })
 )
+
+function refresh() {
+  loadEntriesFromBackend()
+}
+
+onMounted(async () => {
+  await loadEntriesFromBackend()
+  window.addEventListener("entries-updated", refresh)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("entries-updated", refresh)
+})
+
+watch([year, month0], async () => {
+  await loadEntriesFromBackend()
+})
 </script>
 
 <template>
   <div class="page">
     <div class="topline">
-      <span
-        class="back"
-        @click="router.push({ name:'kalender-jahr', query:{ year } })"
-      >
+      <span class="back" @click="router.push({ name:'kalender-jahr', query:{ year } })">
         &lt; {{ year }}
       </span>
     </div>
@@ -56,7 +111,6 @@ const monthLabel = computed(() =>
     <h2 class="deinKalender">♡ Dein Kalender</h2>
 
     <div class="contentGrid">
-      <!-- links: Pfeil links + Monat (OHNE rechten Pfeil) -->
       <div class="left">
         <div class="monthNav">
           <button class="arrow" @click="prevMonth">‹</button>
@@ -64,15 +118,9 @@ const monthLabel = computed(() =>
         </div>
       </div>
 
-      <!-- rechts: Kalender + rechter Pfeil daneben -->
       <div class="right">
         <div class="calendarWrap">
-          <Kalendar
-            :year="year"
-            :month="month0"
-            :periodDates="periodDates"
-            @select="handleSelect"
-          />
+          <Kalendar :year="year" :month="month0" :periodDates="periodDates" @select="handleSelect" />
           <button class="arrow" @click="nextMonth">›</button>
         </div>
       </div>

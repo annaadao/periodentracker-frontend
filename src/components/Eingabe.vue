@@ -104,20 +104,30 @@ async function loadFromBackend() {
   try {
     const res = await axios.get<PeriodEntry[]>(`${API}/entries`)
     const targetDe = isoToDe(isoDate.value)
-    const found = res.data.find((e) => e.date === targetDe)
-    if (!found) return
+
+    const candidates = (res.data ?? []).filter((e) => e?.date === targetDe)
+    if (!candidates.length) {
+      entryId.value = null
+      return
+    }
+
+    const found = candidates.reduce((best, cur) =>
+      (cur.id ?? 0) > (best.id ?? 0) ? cur : best
+    )
 
     entryId.value = found.id ?? null
     symptom.value = found.symptom ?? ""
     note.value = found.note ?? ""
 
-    // diese Felder kommen erst, wenn Backend sie hat:
     if (typeof found.periode === "boolean") periode.value = found.periode
     if (typeof found.bleeding === "number") bleeding.value = found.bleeding
     if (typeof found.pain === "number") pain.value = found.pain
     if (typeof found.mood === "number") mood.value = found.mood
     if (Array.isArray(found.meds)) meds.value = found.meds
-  } catch {}
+  } catch (err) {
+    console.error("GET /entries failed:", err)
+    entryId.value = null
+  }
 }
 
 async function saveToBackend() {
@@ -126,43 +136,75 @@ async function saveToBackend() {
     symptom: symptom.value,
     note: note.value,
 
-    // !!Wenn Backend da ist, auskommentieren
-    //periode: periode.value ?? undefined,
-    //bleeding: bleeding.value,
-    //pain: pain.value,
-    //mood: mood.value,
-    //meds: meds.value,
+    periode: periode.value ?? undefined,
+    bleeding: bleeding.value,
+    pain: pain.value,
+    mood: mood.value,
+    meds: meds.value,
   }
 
-  if (entryId.value) {
-    await axios.put(`${API}/entries/${entryId.value}`, payload)
-  } else {
-    const res = await axios.post(`${API}/entries`, payload)
-    // falls Backend ID zurückgibt:
-    entryId.value = res.data?.id ?? entryId.value
-  }
+  // Backend POST, verhindert Duplikate
+  const res = await axios.post(`${API}/entries`, payload)
+  entryId.value = res.data?.id ?? entryId.value
 }
 
 async function deleteFromBackend() {
-  if (!entryId.value) return
-  await axios.delete(`${API}/entries/${entryId.value}`)
+  const deDate = isoToDe(isoDate.value)
+
+  // löscht ALLE Einträge dieses Tages (auch alte Duplikate)
+  await axios.delete(`${API}/entries/by-date/${encodeURIComponent(deDate)}`)
   entryId.value = null
 }
 
 async function onSave() {
-  // lokal speichern (damit UI funktioniert)
+  // Minimal-Validierung: Periode Ja/Nein muss ausgewählt sein
+  if (periode.value === null) {
+    alert("Bitte wähle bei 'Periode' Ja oder Nein aus, bevor du speicherst.")
+    return
+  }
+
   saveLocalDraft()
 
-  // Backend speichern (ggf. erstmal nur date/symptom/note)
-  await saveToBackend()
+  try {
+    await saveToBackend()
 
-  router.push({ name: "kalender-monat", query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 } })
+    // Sidebar + Kalender sofort aktualisieren
+    window.dispatchEvent(new Event("entries-updated"))
+
+    alert("✅ Eintrag wurde in der DB gespeichert!")
+    router.push({
+      name: "kalender-monat",
+      query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 },
+    })
+  } catch (err: any) {
+    console.error("SAVE failed:", err)
+    console.error("Status:", err?.response?.status)
+    console.error("Data:", err?.response?.data)
+    alert("❌ Speichern fehlgeschlagen. Schau in die Konsole (Network/Console).")
+  }
 }
 
 async function onDelete() {
-  localStorage.removeItem(storageKey())
-  await deleteFromBackend()
-  router.push({ name: "kalender-monat", query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 } })
+  if (!confirm("Willst du den Eintrag wirklich löschen?")) return
+
+  try {
+    localStorage.removeItem(storageKey())
+    await deleteFromBackend()
+
+    // ✅ Sidebar + Kalender sofort aktualisieren
+    window.dispatchEvent(new Event("entries-updated"))
+
+    alert("🗑 Eintrag wurde in der DB gelöscht!")
+    router.push({
+      name: "kalender-monat",
+      query: { year: isoDate.value.slice(0, 4), month: Number(isoDate.value.slice(5, 7)) - 1 },
+    })
+  } catch (err: any) {
+    console.error("DELETE failed:", err)
+    console.error("Status:", err?.response?.status)
+    console.error("Data:", err?.response?.data)
+    alert("❌ Löschen fehlgeschlagen. Schau in die Konsole (Network/Console).")
+  }
 }
 
 onMounted(async () => {
