@@ -4,6 +4,12 @@ import KalenderJahr from '../components/KalenderJahr.vue'
 import KalenderAnzeige from '../components/KalenderAnzeige.vue'
 import Eingabe from '../components/Eingabe.vue'
 
+// INFO
+import InfoHub from "../components/InfoHub.vue"
+import InfoKategorie from "../components/InfoKategorie.vue"
+import InfoWatch from "../components/InfoWatch.vue"
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -17,6 +23,11 @@ const router = createRouter({
 
     // 3. Eintrag
     { path: '/eintrag/:date', name: 'eintrag', component: Eingabe },
+
+    // INFO ROUTES
+    { path: "/info", name: "info-hub", component: InfoHub },
+    { path: "/info/:category", name: "info-kategorie", component: InfoKategorie },
+    { path: "/info/watch/:id", name: "info-watch", component: InfoWatch },
   ],
 })
 

@@ -10,7 +10,7 @@ const open = ref(false)
 
 type PeriodEntry = {
   id: number
-  date: string   // dd-mm-yyyy aus Backend
+  date: string
   symptom: string
   note: string
 }
@@ -20,14 +20,13 @@ const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentrac
 
 function deToIso(de: string) {
   const [dd, mm, yyyy] = de.split("-")
-  return `${yyyy}-${mm}-${dd}` // yyyy-mm-dd
+  return `${yyyy}-${mm}-${dd}`
 }
 
 async function loadEntries() {
   try {
     const res = await axios.get<PeriodEntry[]>(`${API}/entries`)
 
-    // pro Datum nur ein Eintrag
     const map = new Map<string, PeriodEntry>()
     for (const e of res.data) {
       const existing = map.get(e.date)
@@ -37,9 +36,7 @@ async function loadEntries() {
     entries.value = Array.from(map.values()).sort((a, b) =>
       deToIso(b.date).localeCompare(deToIso(a.date))
     )
-  } catch (e) {
-    // optional: console.log(e)
-  }
+  } catch {}
 }
 
 function go(path: string) {
@@ -50,7 +47,6 @@ function openEntry(e: PeriodEntry) {
   router.push({ name: "eintrag", params: { date: deToIso(e.date) } })
 }
 
-// automatische Aktualisierung, wenn was gespeichert/gelöscht wird
 function refreshEntries() {
   loadEntries()
 }
@@ -64,12 +60,10 @@ onBeforeUnmount(() => {
   window.removeEventListener("entries-updated", refreshEntries)
 })
 
-// wenn Sidebar geöffnet wird, direkt laden
 watch(open, (isOpen) => {
   if (isOpen) loadEntries()
 })
 
-// bei Routenwechsel aktualisieren (nur wenn Sidebar offen)
 watch(
   () => route.fullPath,
   () => {
@@ -85,9 +79,10 @@ watch(
       <button class="iconbtn" @click="go('/home')" title="Startseite">⌂</button>
       <button class="iconbtn" @click="go('/kalender')" title="Kalender">▦</button>
 
-      <div class="spacer"></div>
+      <!-- NEU: Info -->
+      <button class="iconbtn" @click="go('/info')" title="Infos">ⓘ</button>
 
-      <button class="iconbtn" @click="go('/home')" title="Account (später Login)">👤</button>
+      <div class="spacer"></div>
     </div>
 
     <div class="panel" v-if="open">
@@ -127,7 +122,6 @@ watch(
   width: 450px;
 }
 
-/* ✅ Icons bleiben in fixer Spalte und sind mittig */
 .iconbar{
   width: 100px;
   display: flex;
@@ -222,3 +216,4 @@ watch(
   white-space: pre-line;
 }
 </style>
+
