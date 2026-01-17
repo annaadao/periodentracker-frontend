@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import axios from "axios"
 
@@ -7,6 +7,7 @@ const route = useRoute()
 const router = useRouter()
 
 const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentracker.onrender.com/api/v1"
+const OPENWEATHER_KEY = (import.meta as any).env?.VITE_OPENWEATHER_API_KEY as string | undefined
 
 const isoDate = computed(() => route.params.date as string) // YYYY-MM-DD
 
@@ -15,33 +16,25 @@ function isoToDe(iso: string) {
   return `${d}-${m}-${y}` // dd-mm-yyyy (Backend)
 }
 
-function deToIso(de: string) {
-  const [dd, mm, yyyy] = de.split("-")
-  return `${yyyy}-${mm}-${dd}`
-}
-
 type PeriodEntry = {
   id?: number
   date: string // dd-mm-yyyy
   symptom?: string
   note?: string
-
-  // NEU (Backend später):
   periode?: boolean
   bleeding?: number // 1..3
   pain?: number // 0..3
   mood?: number // 1..5
-  meds?: string[] // z.B. ["Schmerzmittel","Wärme"]
+  meds?: string[]
 }
 
 const entryId = ref<number | null>(null)
 
 const periode = ref<boolean | null>(null)
-
-const bleeding = ref<number>(2) // 1 leicht, 2 mittel, 3 stark
-const pain = ref<number>(1) // 0 keine, 1 leicht, 2 mittel, 3 stark
+const bleeding = ref<number>(2)
+const pain = ref<number>(1)
 const symptom = ref<string>("")
-const mood = ref<number>(3) // 1..5
+const mood = ref<number>(3)
 const meds = ref<string[]>([])
 const note = ref<string>("")
 
@@ -60,7 +53,6 @@ function toggleMed(m: string) {
     meds.value = ["Nichts"]
     return
   }
-  // wenn nichts aktiv war raus
   meds.value = meds.value.filter((x) => x !== "Nichts")
 
   if (meds.value.includes(m)) meds.value = meds.value.filter((x) => x !== m)
@@ -71,7 +63,6 @@ function storageKey() {
   return `entryDraft:${isoDate.value}`
 }
 
-// lokal zwischenspeichern, damit UI schon funktioniert, bevor Backend erweitert ist
 function saveLocalDraft() {
   const payload = {
     periode: periode.value,
@@ -135,7 +126,6 @@ async function saveToBackend() {
     date: isoToDe(isoDate.value),
     symptom: symptom.value,
     note: note.value,
-
     periode: periode.value ?? undefined,
     bleeding: bleeding.value,
     pain: pain.value,
@@ -143,21 +133,114 @@ async function saveToBackend() {
     meds: meds.value,
   }
 
-  // Backend POST, verhindert Duplikate
   const res = await axios.post(`${API}/entries`, payload)
   entryId.value = res.data?.id ?? entryId.value
 }
 
 async function deleteFromBackend() {
   const deDate = isoToDe(isoDate.value)
-
-  // löscht ALLE Einträge dieses Tages (auch alte Duplikate)
   await axios.delete(`${API}/entries/by-date/${encodeURIComponent(deDate)}`)
   entryId.value = null
 }
 
+/* ---------------------- WEATHER (OpenWeather) ---------------------- */
+type WeatherState =
+  | { status: "loading" }
+  | { status: "no-key" }
+  | { status: "error" }
+  | {
+  status: "ok"
+  temp: number
+  minTemp: number
+  maxTemp: number
+  text: string
+  iconUrl: string | null
+}
+
+const weather = ref<WeatherState>({ status: "loading" })
+
+function roundTemp(n: number) {
+  return Number.isFinite(n) ? Math.round(n) : 0
+}
+
+function pickClosestToNoon(items: any[]) {
+  let best = items[0]
+  let bestDiff = 999
+  for (const it of items) {
+    const dt = String(it.dt_txt ?? "")
+    const hour = Number(dt.slice(11, 13))
+    const diff = Math.abs(hour - 12)
+    if (diff < bestDiff) {
+      bestDiff = diff
+      best = it
+    }
+  }
+  return best
+}
+
+async function loadWeather() {
+  if (!OPENWEATHER_KEY || !OPENWEATHER_KEY.trim()) {
+    weather.value = { status: "no-key" }
+    return
+  }
+
+  weather.value = { status: "loading" }
+
+  try {
+    // Berlin fix
+    const lat = 52.52
+    const lon = 13.405
+
+    // Forecast (3h) -> wir filtern auf den ausgewählten Tag
+    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=de&appid=${encodeURIComponent(
+      OPENWEATHER_KEY
+    )}`
+
+    const res = await fetch(url)
+    if (!res.ok) throw new Error("OpenWeather forecast failed")
+    const data = await res.json()
+
+    const list = Array.isArray(data.list) ? data.list : []
+    const target = isoDate.value // YYYY-MM-DD
+
+    const dayItems = list.filter((it: any) => String(it.dt_txt ?? "").startsWith(target))
+    if (!dayItems.length) {
+      weather.value = { status: "error" }
+      return
+    }
+
+    const temps = dayItems
+      .map((it: any) => Number(it.main?.temp))
+      .filter((n: number) => Number.isFinite(n))
+
+    const minTemp = Math.min(...temps)
+    const maxTemp = Math.max(...temps)
+
+    const pick = pickClosestToNoon(dayItems)
+    const temp = Number(pick?.main?.temp)
+
+    const w = Array.isArray(pick?.weather) ? pick.weather[0] : null
+    const text = String(w?.description ?? "unbekannt")
+    const icon = String(w?.icon ?? "")
+    const iconUrl = icon ? `https://openweathermap.org/img/wn/${icon}@2x.png` : null
+
+    weather.value = {
+      status: "ok",
+      temp,
+      minTemp,
+      maxTemp,
+      text,
+      iconUrl,
+    }
+  } catch (e) {
+    console.error("Weather load failed:", e)
+    weather.value = { status: "error" }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
 async function onSave() {
-  // Minimal-Validierung: Periode Ja/Nein muss ausgewählt sein
   if (periode.value === null) {
     alert("Bitte wähle bei 'Periode' Ja oder Nein aus, bevor du speicherst.")
     return
@@ -167,8 +250,6 @@ async function onSave() {
 
   try {
     await saveToBackend()
-
-    // Sidebar + Kalender sofort aktualisieren
     window.dispatchEvent(new Event("entries-updated"))
 
     alert("✅ Eintrag wurde in der DB gespeichert!")
@@ -191,7 +272,6 @@ async function onDelete() {
     localStorage.removeItem(storageKey())
     await deleteFromBackend()
 
-    // ✅ Sidebar + Kalender sofort aktualisieren
     window.dispatchEvent(new Event("entries-updated"))
 
     alert("🗑 Eintrag wurde in der DB gelöscht!")
@@ -210,12 +290,65 @@ async function onDelete() {
 onMounted(async () => {
   loadLocalDraft()
   await loadFromBackend()
+  await loadWeather()
 })
+
+watch(
+  () => isoDate.value,
+  async () => {
+    // wenn du zwischen Tagen wechselst
+    loadLocalDraft()
+    await loadFromBackend()
+    await loadWeather()
+  }
+)
 </script>
 
 <template>
   <section class="entryCard">
-    <h2 class="entryTitle">Eintrag für {{ isoDate }}</h2>
+    <div class="headerRow">
+      <h2 class="entryTitle">Eintrag für {{ isoDate }}</h2>
+
+      <!-- Wetter-Kästchen rechts neben Datum -->
+      <div class="weatherCard">
+        <div class="weatherTop">
+          <div class="weatherIcon">
+            <img
+              v-if="weather.status === 'ok' && weather.iconUrl"
+              :src="weather.iconUrl"
+              alt="Wetter Icon"
+            />
+            <span v-else class="fallbackIcon">?</span>
+          </div>
+
+          <div class="weatherMain">
+            <div class="tempLine">
+              <span class="tempNow">
+                {{ weather.status === 'ok' ? roundTemp(weather.temp) : "—" }}
+              </span>
+              <span class="tempUnit">°C</span>
+            </div>
+
+            <div class="minmaxLine">
+              <span class="minmaxLabel">min</span>
+              <span class="minmaxVal">{{ weather.status === 'ok' ? roundTemp(weather.minTemp) : "—" }}</span>
+              <span class="sep">/</span>
+              <span class="minmaxLabel">max</span>
+              <span class="minmaxVal">{{ weather.status === 'ok' ? roundTemp(weather.maxTemp) : "—" }}</span>
+            </div>
+
+            <div class="desc">
+              {{ weather.status === 'ok' ? weather.text : (weather.status === 'no-key' ? "API-Key fehlt" : "unbekannt") }}
+            </div>
+          </div>
+
+          <div class="city">Berlin</div>
+        </div>
+
+        <div v-if="weather.status === 'loading'" class="hint">lädt…</div>
+        <div v-if="weather.status === 'error'" class="hint error">Wetter nicht ladbar</div>
+      </div>
+    </div>
 
     <!-- Periode Ja/Nein -->
     <div class="block">
@@ -316,20 +449,136 @@ onMounted(async () => {
   margin-left: 120px;
 }
 
+/* Header row (Titel links, Wetter rechts) */
+.headerRow{
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
 /* Eintrag für xxxx */
 .entryTitle{
-  margin: 0 0 12px 0;
+  margin: 0;
   margin-bottom: 60px;
   color: var(--accent);
   font-weight: 900;
   font-size: 40px;
 }
 
+/* Wetterbox */
+.weatherCard{
+  width: 260px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--sidebar);
+  padding: 12px 12px 10px;
+}
+
+.weatherTop{
+  display:grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 10px;
+  align-items:center;
+}
+
+.weatherIcon{
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.weatherIcon img{
+  width: 54px;
+  height: 54px;
+}
+
+.fallbackIcon{
+  font-weight: 900;
+  color: var(--accent);
+  opacity: .6;
+  font-size: 22px;
+}
+
+.weatherMain{
+  display:flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tempLine{
+  display:flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.tempNow{
+  font-size: 26px;
+  line-height: 1;
+}
+
+.tempUnit{
+  font-size: 14px;
+  opacity: .7;
+}
+
+.minmaxLine{
+  display:flex;
+  gap: 4px;
+  align-items:center;
+  font-size: 12px;
+  color: var(--accent);
+  opacity: .8;
+}
+
+.sep{
+  opacity: .6;
+  padding: 0 2px;
+}
+
+.desc{
+  font-size: 12px;
+  color: var(--accent);
+  opacity: .85;
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.city{
+  font-weight: 900;
+  color: var(--accent);
+  opacity: .9;
+  font-size: 14px;
+  align-self: end;
+}
+
+.hint{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  opacity: .7;
+}
+
+.hint.error{
+  color: #a24b4b;
+  opacity: .95;
+}
+
+/* Rest dein Style unverändert */
 .block{
   margin-top: 16px;
 }
 
-/* Alle Überschriften zu den Funktionen */
 .labelBig{
   font-weight: 750;
   font-size: 18px;
@@ -338,7 +587,6 @@ onMounted(async () => {
   margin-top: 40px;
 }
 
-/* Ja/Nein Abstand */
 .radioRow{
   display:flex;
   gap:90px;
@@ -354,7 +602,6 @@ onMounted(async () => {
   color: var(--text);
 }
 
-/* Inputs */
 .text{
   width: 100%;
   padding: 12px 14px;
@@ -442,7 +689,6 @@ onMounted(async () => {
   gap: 12px;
 }
 
-/* Zurück, Speichern, Löschen Buttons */
 .btn{
   padding: 15px 30px;
   border-radius: 20px;
@@ -550,5 +796,4 @@ onMounted(async () => {
 .rangeLabels span{
   text-align: center;
 }
-
 </style>
