@@ -2,12 +2,12 @@
 import { computed, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import axios from "axios"
+import { fetchBerlinWeatherForDate } from "@/services/weatherService"
 
 const route = useRoute()
 const router = useRouter()
 
 const API = (import.meta as any).env?.VITE_API_BASE_URL || "https://periodentracker.onrender.com/api/v1"
-const OPENWEATHER_KEY = (import.meta as any).env?.VITE_OPENWEATHER_API_KEY as string | undefined
 
 const isoDate = computed(() => route.params.date as string) // YYYY-MM-DD
 
@@ -134,7 +134,7 @@ async function saveToBackend() {
   }
 
   const res = await axios.post(`${API}/entries`, payload)
-  entryId.value = res.data?.id ?? entryId.value
+  entryId.value = (res as any).data?.id ?? entryId.value
 }
 
 async function deleteFromBackend() {
@@ -143,11 +143,10 @@ async function deleteFromBackend() {
   entryId.value = null
 }
 
-/* ---------------------- WEATHER (OpenWeather) ---------------------- */
+/* ---------------------- WEATHER (Open-Meteo) ---------------------- */
 type WeatherState =
   | { status: "loading" }
-  | { status: "no-key" }
-  | { status: "error" }
+  | { status: "error"; message: string }
   | {
   status: "ok"
   temp: number
@@ -163,82 +162,99 @@ function roundTemp(n: number) {
   return Number.isFinite(n) ? Math.round(n) : 0
 }
 
-function pickClosestToNoon(items: any[]) {
-  let best = items[0]
-  let bestDiff = 999
-  for (const it of items) {
-    const dt = String(it.dt_txt ?? "")
-    const hour = Number(dt.slice(11, 13))
-    const diff = Math.abs(hour - 12)
-    if (diff < bestDiff) {
-      bestDiff = diff
-      best = it
-    }
-  }
-  return best
+// Cache: 10 Minuten
+const WEATHER_CACHE_TTL_MS = 10 * 60 * 1000
+
+function weatherCacheKey(dateISO: string) {
+  return `weather:berlin:${dateISO}`
 }
 
+function readWeatherCache(dateISO: string): Extract<WeatherState, { status: "ok" }> | null {
+  const raw = sessionStorage.getItem(weatherCacheKey(dateISO))
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw) as { ts?: unknown; data?: unknown }
+    const ts = typeof parsed.ts === "number" ? parsed.ts : null
+    const data = parsed.data as any
+
+    if (!ts || Date.now() - ts > WEATHER_CACHE_TTL_MS) return null
+    if (!data || typeof data !== "object") return null
+
+    // Minimal-Validation, sonst knallt dir irgendwann irgendein Müll rein
+    if (typeof data.temp !== "number") return null
+    if (typeof data.minTemp !== "number") return null
+    if (typeof data.maxTemp !== "number") return null
+    if (typeof data.text !== "string") return null
+    if (data.iconUrl !== null && typeof data.iconUrl !== "string") return null
+
+    return {
+      status: "ok",
+      temp: data.temp,
+      minTemp: data.minTemp,
+      maxTemp: data.maxTemp,
+      text: data.text,
+      iconUrl: data.iconUrl ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function writeWeatherCache(dateISO: string, ok: Extract<WeatherState, { status: "ok" }>) {
+  const payload = { ts: Date.now(), data: ok }
+  sessionStorage.setItem(weatherCacheKey(dateISO), JSON.stringify(payload))
+}
+
+// schützt gegen “Route gewechselt, alter Request kommt später zurück”
+let weatherReqSeq = 0
+
 async function loadWeather() {
-  if (!OPENWEATHER_KEY || !OPENWEATHER_KEY.trim()) {
-    weather.value = { status: "no-key" }
+  const seq = ++weatherReqSeq
+
+  // 1) Cache hit
+  const cached = readWeatherCache(isoDate.value)
+  if (cached) {
+    weather.value = cached
     return
   }
 
   weather.value = { status: "loading" }
 
   try {
-    // Berlin fix
-    const lat = 52.52
-    const lon = 13.405
+    const w = await fetchBerlinWeatherForDate(isoDate.value)
 
-    // Forecast (3h) -> wir filtern auf den ausgewählten Tag
-    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=de&appid=${encodeURIComponent(
-      OPENWEATHER_KEY
-    )}`
+    // wenn inzwischen ein neuer Request läuft -> Ergebnis ignorieren
+    if (seq !== weatherReqSeq) return
 
-    const res = await fetch(url)
-    if (!res.ok) throw new Error("OpenWeather forecast failed")
-    const data = await res.json()
-
-    const list = Array.isArray(data.list) ? data.list : []
-    const target = isoDate.value // YYYY-MM-DD
-
-    const dayItems = list.filter((it: any) => String(it.dt_txt ?? "").startsWith(target))
-    if (!dayItems.length) {
-      weather.value = { status: "error" }
-      return
-    }
-
-    const temps = dayItems
-      .map((it: any) => Number(it.main?.temp))
-      .filter((n: number) => Number.isFinite(n))
-
-    const minTemp = Math.min(...temps)
-    const maxTemp = Math.max(...temps)
-
-    const pick = pickClosestToNoon(dayItems)
-    const temp = Number(pick?.main?.temp)
-
-    const w = Array.isArray(pick?.weather) ? pick.weather[0] : null
-    const text = String(w?.description ?? "unbekannt")
-    const icon = String(w?.icon ?? "")
-    const iconUrl = icon ? `https://openweathermap.org/img/wn/${icon}@2x.png` : null
-
-    weather.value = {
+    const ok: Extract<WeatherState, { status: "ok" }> = {
       status: "ok",
-      temp,
-      minTemp,
-      maxTemp,
-      text,
-      iconUrl,
+      temp: w.temp,
+      minTemp: w.tempMin,
+      maxTemp: w.tempMax,
+      text: w.description,
+      iconUrl: w.iconUrl ?? null,
     }
+
+    weather.value = ok
+    writeWeatherCache(isoDate.value, ok)
   } catch (e) {
+    if (seq !== weatherReqSeq) return
+
+    const raw = e instanceof Error ? e.message : String(e)
+
+    // bessere UX statt “Wetter nicht ladbar”
+    let msg = "Wetter nicht ladbar"
+    if (raw.includes("zu weit in der Zukunft")) {
+      msg = "Für dieses Datum gibt es noch keine Vorhersage."
+    }
+
     console.error("Weather load failed:", e)
-    weather.value = { status: "error" }
+    weather.value = { status: "error", message: msg }
   }
 }
-
 /* ------------------------------------------------------------------ */
+
 
 async function onSave() {
   if (periode.value === null) {
@@ -296,7 +312,6 @@ onMounted(async () => {
 watch(
   () => isoDate.value,
   async () => {
-    // wenn du zwischen Tagen wechselst
     loadLocalDraft()
     await loadFromBackend()
     await loadWeather()
@@ -338,7 +353,7 @@ watch(
             </div>
 
             <div class="desc">
-              {{ weather.status === 'ok' ? weather.text : (weather.status === 'no-key' ? "API-Key fehlt" : "unbekannt") }}
+              {{ weather.status === 'ok' ? weather.text : "—" }}
             </div>
           </div>
 
@@ -346,7 +361,7 @@ watch(
         </div>
 
         <div v-if="weather.status === 'loading'" class="hint">lädt…</div>
-        <div v-if="weather.status === 'error'" class="hint error">Wetter nicht ladbar</div>
+        <div v-if="weather.status === 'error'" class="hint error">{{ weather.message }}</div>
       </div>
     </div>
 
@@ -440,6 +455,8 @@ watch(
 </template>
 
 <style scoped>
+/* dein kompletter Style unverändert (kopiert aus deiner Version) */
+
 .entryCard{
   border:1px solid var(--border);
   background: var(--card);
@@ -449,7 +466,6 @@ watch(
   margin-left: 120px;
 }
 
-/* Header row (Titel links, Wetter rechts) */
 .headerRow{
   display:flex;
   align-items:flex-start;
@@ -457,7 +473,6 @@ watch(
   gap: 18px;
 }
 
-/* Eintrag für xxxx */
 .entryTitle{
   margin: 0;
   margin-bottom: 60px;
@@ -466,7 +481,6 @@ watch(
   font-size: 40px;
 }
 
-/* Wetterbox */
 .weatherCard{
   width: 260px;
   border-radius: 16px;
@@ -574,7 +588,6 @@ watch(
   opacity: .95;
 }
 
-/* Rest dein Style unverändert */
 .block{
   margin-top: 16px;
 }
@@ -761,7 +774,6 @@ watch(
   cursor: pointer;
 }
 
-/* Herz statt Punkt */
 .heartThumb::-webkit-slider-thumb{
   background: var(--card);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23d06a88' d='M12 21s-7.2-4.6-9.6-8.7C.6 9 .9 6.2 3 4.5 4.9 3 7.6 3.3 9.3 5c.6.6 1.1 1.3 1.4 2 .3-.7.8-1.4 1.4-2 1.7-1.7 4.4-2 6.3-.5 2.1 1.7 2.4 4.5.6 7.8C19.2 16.4 12 21 12 21z'/></svg>");
